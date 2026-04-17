@@ -94,7 +94,7 @@
     try {
       const response = await fetch(`${API_URL}/api/courses`);
       const data = await response.json();
-      coursesData = data;
+      coursesData = Array.isArray(data) ? data : [];
       renderCourses();
       updateStats();
     } catch (error) {
@@ -107,7 +107,7 @@
     try {
       const response = await fetch(`${API_URL}/api/books`);
       const data = await response.json();
-      storeItems = data.map(item => ({ ...item, category: 'book', type: 'product' }));
+      storeItems = Array.isArray(data) ? data.map(item => ({ ...item, category: 'book', type: 'product' })) : [];
       renderStore();
       updateStats();
     } catch (error) {
@@ -120,7 +120,7 @@
     try {
       const response = await fetch(`${API_URL}/api/products`);
       const data = await response.json();
-      const products = data.map(item => ({ ...item, category: 'product', type: 'product' }));
+      const products = Array.isArray(data) ? data.map(item => ({ ...item, category: 'product', type: 'product' })) : [];
       storeItems = [...storeItems.filter(i => i.category === 'book'), ...products];
       renderStore();
       updateStats();
@@ -211,14 +211,15 @@
       });
       const data = await response.json();
       if(data.success){
-        showToast('تم إضافة الدورة');
+        showToast('✅ تم إضافة الدورة');
         e.target.reset();
         loadCoursesFromAPI();
       } else {
-        showToast('خطأ في إضافة الدورة');
+        showToast('❌ خطأ في إضافة الدورة: ' + (data.error || 'غير معروف'));
       }
     } catch(error) {
-      showToast('خطأ في الاتصال بالخادم');
+      console.error('Add course error:', error);
+      showToast('❌ خطأ في الاتصال بالخادم');
     }
   });
 
@@ -233,7 +234,7 @@
     const stock = parseInt(document.getElementById('prod-stock').value); 
     const imageFile = document.getElementById('prod-image').files[0]; 
     const pdfFile = document.getElementById('prod-pdf').files[0]; 
-    if(!imageFile){ showToast('اختر صورة'); return; } 
+    if(!imageFile){ showToast('❌ اختر صورة'); return; } 
     const readFile = (file) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
     const imageData = await readFile(imageFile); 
     let fileData = null; 
@@ -252,19 +253,22 @@
       });
       const data = await response.json();
       if(data.success){
-        showToast(`تم نشر ${type === 'book' ? 'الكتاب' : 'المنتج'}`);
+        showToast(`✅ تم نشر ${type === 'book' ? 'الكتاب' : 'المنتج'}`);
         e.target.reset();
+        document.getElementById('prod-image').value = '';
+        document.getElementById('prod-pdf').value = '';
         if(type === 'book') loadBooksFromAPI();
         else loadProductsFromAPI();
       } else {
-        showToast('خطأ في النشر');
+        showToast('❌ خطأ في النشر: ' + (data.error || 'غير معروف'));
       }
     } catch(error) {
-      showToast('خطأ في الاتصال بالخادم');
+      console.error('Add product error:', error);
+      showToast('❌ خطأ في الاتصال بالخادم');
     }
   });
 
-  // ===== شراء دورة (معدل) =====
+  // ===== شراء دورة =====
   async function purchaseCourse(id){ 
     if(!currentUser){ showToast('سجل دخول أولاً'); openAuthModal('login'); return; } 
     const course = coursesData.find(c => c.id === id); 
@@ -308,7 +312,7 @@
     }
   }
 
-  // ===== شراء كتاب (معدل) =====
+  // ===== شراء كتاب =====
   async function buyItem(id, type){ 
     if(!currentUser){ showToast('يرجى تسجيل الدخول أولاً'); openAuthModal('login'); return; } 
     const item = storeItems.find(i => i.id === id); 
