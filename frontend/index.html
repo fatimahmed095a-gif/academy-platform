@@ -264,63 +264,103 @@
     }
   });
 
-  // ===== شراء دورة =====
+  // ===== شراء دورة (معدل) =====
   async function purchaseCourse(id){ 
     if(!currentUser){ showToast('سجل دخول أولاً'); openAuthModal('login'); return; } 
     const course = coursesData.find(c => c.id === id); 
-    if(!course) return; 
+    if(!course){ showToast('❌ الدورة غير موجودة'); return; }
     
     try {
       const response = await fetch(`${API_URL}/api/purchases`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, item_id: id, item_type: 'course', item_title: course.title, item_price: course.price, quantity: 1, total_price: course.price })
+        body: JSON.stringify({ 
+          user_id: currentUser.id, 
+          item_id: id, 
+          item_type: 'course', 
+          item_title: course.title, 
+          item_price: course.price, 
+          quantity: 1, 
+          total_price: course.price 
+        })
       });
       const data = await response.json();
       if(data.success){
         if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
-        userPurchases[currentUser.id].push({ id: Date.now().toString(), type: 'course', title: course.title, price: course.price, image: course.image_url, videoUrl: course.video_url, purchaseDate: new Date().toISOString() }); 
+        userPurchases[currentUser.id].push({ 
+          id: Date.now().toString(), 
+          type: 'course', 
+          title: course.title, 
+          price: course.price, 
+          image: course.image_url || course.image_data, 
+          videoUrl: course.video_url || course.video_data, 
+          purchaseDate: new Date().toISOString() 
+        }); 
         savePurchases(); 
-        showToast(`تم شراء الدورة: ${course.title}`); 
+        showToast(`✅ تم شراء الدورة: ${course.title}`); 
         renderPurchasesTab();
       } else {
-        showToast('خطأ في عملية الشراء');
+        showToast('❌ خطأ في عملية الشراء: ' + (data.error || 'غير معروف'));
       }
     } catch(error) {
-      showToast('خطأ في الاتصال بالخادم');
+      console.error('Purchase error:', error);
+      showToast('❌ خطأ في الاتصال بالخادم');
     }
   }
 
-  // ===== شراء كتاب =====
+  // ===== شراء كتاب (معدل) =====
   async function buyItem(id, type){ 
     if(!currentUser){ showToast('يرجى تسجيل الدخول أولاً'); openAuthModal('login'); return; } 
     const item = storeItems.find(i => i.id === id); 
-    if(!item) return; 
+    if(!item){ showToast('❌ العنصر غير موجود'); return; }
+    
     if(type === 'book'){ 
       try {
         const response = await fetch(`${API_URL}/api/purchases`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: currentUser.id, item_id: id, item_type: 'book', item_title: item.title, item_price: item.price, quantity: 1, total_price: item.price })
+          body: JSON.stringify({ 
+            user_id: currentUser.id, 
+            item_id: id, 
+            item_type: 'book', 
+            item_title: item.title, 
+            item_price: item.price, 
+            quantity: 1, 
+            total_price: item.price 
+          })
         });
         const data = await response.json();
         if(data.success){
-          const purchaseRecord = { id: Date.now().toString(), type: 'book', title: item.title, price: item.price, image: item.image_url, fileData: item.file_url, purchaseDate: new Date().toISOString() };
+          const purchaseRecord = { 
+            id: Date.now().toString(), 
+            type: 'book', 
+            title: item.title, 
+            price: item.price, 
+            image: item.image_url || item.image_data, 
+            fileData: item.file_url || item.file_data, 
+            purchaseDate: new Date().toISOString() 
+          };
           if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
           userPurchases[currentUser.id].push(purchaseRecord); 
           savePurchases(); 
-          showToast(`تم شراء الكتاب: ${item.title}`); 
+          showToast(`✅ تم شراء الكتاب: ${item.title}`); 
           renderPurchasesTab(); 
-          if(item.file_url){ const a = document.createElement('a'); a.href = item.file_url; a.download = `${item.title}.pdf`; a.click(); }
+          if(item.file_url || item.file_data){ 
+            const a = document.createElement('a'); 
+            a.href = item.file_url || item.file_data; 
+            a.download = `${item.title}.pdf`; 
+            a.click(); 
+          }
         } else {
-          showToast('خطأ في عملية الشراء');
+          showToast('❌ خطأ في عملية الشراء: ' + (data.error || 'غير معروف'));
         }
       } catch(error) {
-        showToast('خطأ في الاتصال بالخادم');
+        console.error('Purchase error:', error);
+        showToast('❌ خطأ في الاتصال بالخادم');
       }
     } else { 
       tempOrderItem = item; 
-      document.getElementById('order-product-info').innerHTML = `<strong>${item.title}</strong><br>السعر: ${item.price} د.ع`; 
+      document.getElementById('order-product-info').innerHTML = `<strong>${item.title}</strong><br>السعر: ${item.price} د.ع<br>الكمية المتاحة: ${item.quantity || 'غير محدد'}`; 
       document.getElementById('order-modal').classList.add('active'); 
     } 
   }
@@ -346,17 +386,18 @@
         productOrders.push(order); 
         saveOrders(); 
         if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
-        userPurchases[currentUser.id].push({ id: `order_${order.id}`, type: 'product', title: `${tempOrderItem.title} (طلب رقم ${order.id})`, price: tempOrderItem.price * qty, image: tempOrderItem.image_url, purchaseDate: new Date().toISOString() }); 
+        userPurchases[currentUser.id].push({ id: `order_${order.id}`, type: 'product', title: `${tempOrderItem.title} (طلب رقم ${order.id})`, price: tempOrderItem.price * qty, image: tempOrderItem.image_url || tempOrderItem.image_data, purchaseDate: new Date().toISOString() }); 
         savePurchases(); 
-        showToast('تم إرسال طلبك، سيتواصل معك المندوب'); 
+        showToast('✅ تم إرسال طلبك، سيتواصل معك المندوب'); 
         closeOrderModal(); 
         renderPurchasesTab(); 
         updateAdminBadge();
       } else {
-        showToast('خطأ في إرسال الطلب');
+        showToast('❌ خطأ في إرسال الطلب: ' + (data.error || 'غير معروف'));
       }
     } catch(error) {
-      showToast('خطأ في الاتصال بالخادم');
+      console.error('Order error:', error);
+      showToast('❌ خطأ في الاتصال بالخادم');
     }
   }
 
@@ -453,7 +494,7 @@
     if(items.length === 0){ noDiv.classList.remove('hidden'); noDiv.innerText = 'لا توجد '+ (storeCategory === 'book' ? 'كتب' : 'منتجات'); } 
     else { noDiv.classList.add('hidden'); 
       items.forEach(item => { const btnText = storeCategory === 'book' ? '📥 شراء و تحميل' : '🛒 شراء (توصيل)'; const card = document.createElement('div'); card.className = 'card-scale bg-white rounded-2xl overflow-hidden shadow'; 
-      card.innerHTML = `<img src="${item.image_url || ''}" class="h-44 w-full object-cover"><div class="p-4"><h3 class="font-bold">${item.title}</h3><p class="text-sm text-gray-500">${(item.description || '').substring(0,60)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold text-purple-600">${item.price} د.ع</span><button onclick="buyItem('${item.id}','${storeCategory}')" class="bg-indigo-100 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-sm transition">${btnText}</button></div></div>`; 
+      card.innerHTML = `<img src="${item.image_url || item.image_data || ''}" class="h-44 w-full object-cover"><div class="p-4"><h3 class="font-bold">${item.title}</h3><p class="text-sm text-gray-500">${(item.description || '').substring(0,60)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold text-purple-600">${item.price} د.ع</span><button onclick="buyItem('${item.id}','${storeCategory}')" class="bg-indigo-100 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-sm transition">${btnText}</button></div></div>`; 
       grid.appendChild(card); }); 
     } lucide.createIcons(); 
   }
@@ -482,7 +523,7 @@
     if(coursesData.length === 0){ document.getElementById('no-courses').classList.remove('hidden'); } 
     else { document.getElementById('no-courses').classList.add('hidden'); 
       coursesData.forEach(c => { const card = document.createElement('div'); card.className = 'bg-white rounded-2xl shadow overflow-hidden'; 
-      card.innerHTML = `<img src="${c.image_url || c.image_data}" class="h-40 w-full object-cover"><div class="p-4"><h3 class="font-bold">${c.title}</h3><p>${(c.description || '').substring(0,70)}</p><div class="flex justify-between mt-3"><span class="text-xl font-bold">${c.price} د.ع</span><button onclick="purchaseCourse('${c.id}')" class="bg-purple-100 px-4 py-1 rounded-full text-sm">شراء الدورة</button></div></div>`; 
+      card.innerHTML = `<img src="${c.image_url || c.image_data || ''}" class="h-40 w-full object-cover"><div class="p-4"><h3 class="font-bold">${c.title}</h3><p>${(c.description || '').substring(0,70)}</p><div class="flex justify-between mt-3"><span class="text-xl font-bold">${c.price} د.ع</span><button onclick="purchaseCourse('${c.id}')" class="bg-purple-100 px-4 py-1 rounded-full text-sm">شراء الدورة</button></div></div>`; 
       grid.appendChild(card); }); 
     } lucide.createIcons(); 
   }
