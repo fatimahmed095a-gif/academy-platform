@@ -4,8 +4,5 @@
     runtime: python
     repo: https://github.com/fatimahmed095a-gif/academy-platform
     branch: main
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: python run.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.12
+    buildCommand: pip install flask flask-cors
+    startCommand: python app.py
