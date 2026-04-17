@@ -281,8 +281,13 @@
     }
   });
 
-  // ===== شراء دورة =====
+  // ===== شراء دورة (مع التحقق من صحة المعرف) =====
   async function purchaseCourse(id){ 
+    // التحقق من صحة المعرف - تجنب إرسال 'admin' أو undefined
+    if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
+      showToast('❌ حدث خطأ: معرف الدورة غير صحيح');
+      return;
+    }
     if(!currentUser){ showToast('سجل دخول أولاً'); openAuthModal('login'); return; } 
     const course = coursesData.find(c => c.id === id); 
     if(!course){ showToast('❌ الدورة غير موجودة'); return; }
@@ -314,8 +319,13 @@
     }
   }
 
-  // ===== شراء كتاب =====
+  // ===== شراء كتاب (مع التحقق من صحة المعرف) =====
   async function buyItem(id, type){ 
+    // التحقق من صحة المعرف - تجنب إرسال 'admin' أو undefined
+    if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
+      showToast('❌ حدث خطأ: معرف العنصر غير صحيح');
+      return;
+    }
     if(!currentUser){ showToast('يرجى تسجيل الدخول أولاً'); openAuthModal('login'); return; } 
     const item = storeItems.find(i => i.id === id); 
     if(!item){ showToast('❌ العنصر غير موجود'); return; }
