@@ -283,7 +283,6 @@
 
   // ===== شراء دورة (مع التحقق من صحة المعرف) =====
   async function purchaseCourse(id){ 
-    // التحقق من صحة المعرف - تجنب إرسال 'admin' أو undefined
     if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
       showToast('❌ حدث خطأ: معرف الدورة غير صحيح');
       return;
@@ -321,7 +320,6 @@
 
   // ===== شراء كتاب (مع التحقق من صحة المعرف) =====
   async function buyItem(id, type){ 
-    // التحقق من صحة المعرف - تجنب إرسال 'admin' أو undefined
     if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
       showToast('❌ حدث خطأ: معرف العنصر غير صحيح');
       return;
