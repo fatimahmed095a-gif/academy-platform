@@ -1,0 +1,20 @@
+C:\Users\324\Desktop\academy_project/
+│
+├── frontend/                          # مجلد الواجهة الأمامية
+│   └── index.html                     # الملف الرئيسي للمنصة (الكود الكامل)
+│
+├── backend/                           # مجلد الخلفية (اختياري - للخادم)
+│   ├── server.py                      # خادم Flask
+│   ├── database.py                    # إدارة قاعدة البيانات
+│   └── requirements.txt               # مكتبات بايثون
+│
+├── data/                              # بيانات التخزين (تنشأ تلقائياً)
+│   ├── users.json                     # المستخدمين
+│   ├── courses.json                   # الدورات
+│   ├── books.json                     # الكتب
+│   ├── products.json                  # المنتجات
+│   ├── purchases.json                 # المشتريات
+│   └── orders.json                    # الطلبات
+│
+├── run.py                             # تشغيل الخادم (اختياري)
+└── README.md                          # شرح المشروع

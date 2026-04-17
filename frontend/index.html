@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ar" dir="rtl" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;family=Cairo:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { font-family: 'Cairo', sans-serif; scroll-behavior: smooth; }
+    .poppins { font-family: 'Poppins', sans-serif; }
+    .grad-main { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .card-scale { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .card-scale:hover { transform: scale(1.02); box-shadow: 0 20px 25px -12px rgba(0,0,0,0.2); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .modal-backdrop.active { opacity: 1; pointer-events: all; }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); z-index: 200; padding: 14px 28px; border-radius: 40px; background: #1f2937; color: white; font-weight: 600; transition: transform 0.4s ease; direction: rtl; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .nav-btn { padding: 6px 14px; border-radius: 40px; transition: all 0.2s; cursor: pointer; font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
+    .nav-btn.active { background: #667eea; color: white; }
+    .mobile-nav-scroll { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 8px; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #a78bfa; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-50 via-white to-indigo-50 text-gray-800">
+<div id="app">
+  <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm border-b border-purple-200">
+    <div class="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-2 bg-white rounded-full px-3 py-1 shadow-sm">
+          <i data-lucide="book" class="w-6 h-6 text-purple-600"></i>
+          <span class="font-black poppins text-purple-700 text-xl">أكاديميتي</span>
+        </div>
+        <button onclick="switchTab('admin')" id="tab-admin" class="nav-btn hidden bg-gray-100"><i data-lucide="settings" class="w-4 h-4 ml-1"></i> إدارة</button>
+        <button onclick="switchTab('profile')" id="tab-profile" class="nav-btn hidden bg-gray-100"><i data-lucide="user-circle" class="w-4 h-4 ml-1"></i> ملفي</button>
+        <button onclick="openAuthModal('login')" id="nav-auth-btn" class="nav-btn bg-gradient-to-r from-purple-600 to-indigo-600 text-white"><i data-lucide="log-in" class="w-4 h-4 ml-1"></i> دخول</button>
+      </div>
+      <div class="mobile-nav-scroll flex flex-nowrap md:flex-wrap justify-end max-w-full">
+        <button onclick="switchTab('courses')" id="tab-courses" class="nav-btn active bg-purple-100 text-purple-800"><i data-lucide="graduation-cap" class="w-4 h-4 ml-1"></i> الدورات</button>
+        <button onclick="switchTab('store')" id="tab-store" class="nav-btn bg-gray-100"><i data-lucide="shopping-bag" class="w-4 h-4 ml-1"></i> تسوق الآن</button>
+        <button onclick="switchTab('about')" id="tab-about" class="nav-btn bg-gray-100"><i data-lucide="info" class="w-4 h-4 ml-1"></i> من نحن</button>
+        <button onclick="switchTab('purchases')" id="tab-purchases" class="nav-btn bg-gray-100"><i data-lucide="archive" class="w-4 h-4 ml-1"></i> مشترياتي</button>
+      </div>
+    </div>
+  </nav>
+
+  <section id="hero-section" class="grad-main py-16 px-6">
+    <div class="max-w-5xl mx-auto text-center text-white">
+      <h1 class="text-4xl md:text-5xl poppins font-black mb-4">أكاديمية <span class="text-yellow-200">المعرفة</span></h1>
+      <p class="text-lg md:text-xl mb-6">دورات احترافية، كتب رقمية، ومنتجات تقنية</p>
+      <button onclick="switchTab('courses')" class="inline-flex items-center gap-2 bg-white text-purple-700 font-bold px-6 py-3 rounded-full shadow-lg hover:scale-105 transition">ابدأ التعلم الآن <i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+    </div>
+  </section>
+
+  <section id="courses-tab" class="py-12 px-4"><div class="max-w-7xl mx-auto"><h2 class="text-3xl font-bold mb-2">الدورات <span class="text-purple-600">المتخصصة</span></h2><p class="text-gray-600 mb-6">تطوير مهاراتك مع أفضل المدربين</p><div id="courses-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div><div id="no-courses" class="text-center py-12 text-gray-500 hidden">لا توجد دورات حالياً</div></div></section>
+
+  <section id="store-tab" class="hidden py-12 px-4"><div class="max-w-7xl mx-auto"><div class="flex gap-3 mb-8 border-b pb-3"><button onclick="setStoreCategory('book')" id="store-book-btn" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow"><i data-lucide="book-open" class="w-4 h-4 inline ml-1"></i>الكتب</button><button onclick="setStoreCategory('product')" id="store-product-btn" class="px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700"><i data-lucide="package" class="w-4 h-4 inline ml-1"></i>المنتجات</button></div><h2 id="store-title" class="text-3xl font-bold mb-2">الكتب <span class="text-blue-600">الرقمية</span></h2><p id="store-sub" class="text-gray-600 mb-6">كتب PDF قابلة للتحميل الفوري</p><div id="store-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div><div id="no-store" class="text-center py-12 text-gray-500 hidden"></div></div></section>
+
+  <section id="about-tab" class="hidden py-16 px-6"><div class="max-w-5xl mx-auto text-center"><h2 class="text-3xl font-bold mb-8">من <span class="text-purple-600">نحن</span></h2><div class="grid md:grid-cols-3 gap-8"><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">🎯</div><h3 class="text-xl font-bold">رسالتنا</h3><p class="text-gray-600 mt-2">تقديم تعليم متقن وسهل الوصول</p></div><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">👁️</div><h3 class="text-xl font-bold">رؤيتنا</h3><p class="text-gray-600 mt-2">المنصة الأولى للتعلم الذاتي</p></div><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">⭐</div><h3 class="text-xl font-bold">أهدافنا</h3><p class="text-gray-600 mt-2">محتوى عالي الجودة يناسب سوق العمل</p></div></div></div></section>
+
+  <section id="profile-tab" class="hidden py-12 px-4"><div class="max-w-5xl mx-auto space-y-6"><div class="bg-white rounded-2xl shadow-lg overflow-hidden"><div class="h-28 bg-gradient-to-r from-purple-500 to-indigo-500"></div><div class="px-6 pb-6 relative"><div class="flex flex-col md:flex-row gap-4 -mt-12 items-end"><div class="relative"><img id="profile-avatar" class="w-28 h-28 rounded-2xl border-4 border-white shadow-md bg-gray-100 object-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ddd'/%3E%3Ctext x='50' y='67' text-anchor='middle' font-size='50'%3E👤%3C/text%3E%3C/svg%3E"><label for="avatarUpload" class="absolute bottom-1 right-1 bg-purple-500 text-white p-1.5 rounded-full cursor-pointer"><i data-lucide="camera" class="w-4 h-4"></i></label><input type="file" id="avatarUpload" accept="image/*" class="hidden"></div><div class="flex-1"><h2 id="profile-name-display" class="text-2xl font-bold">المستخدم</h2><p id="profile-email-display" class="text-gray-500 text-sm">البريد</p><div class="flex flex-wrap gap-2 mt-2"><button onclick="toggleEditProfile()" class="bg-blue-500 text-white px-4 py-1.5 rounded-full text-sm">تعديل الملف</button><button onclick="switchTab('purchases')" class="bg-gray-200 text-gray-800 px-4 py-1.5 rounded-full text-sm">مشترياتي</button></div></div></div><div id="editProfileForm" class="hidden mt-6 border-t pt-4"><input type="text" id="edit-name" placeholder="الاسم الكامل" class="w-full border rounded-xl p-2 mb-2"><input type="tel" id="edit-phone" placeholder="رقم الهاتف" class="w-full border rounded-xl p-2 mb-2"><textarea id="edit-bio" placeholder="نبذة عنك" class="w-full border rounded-xl p-2 mb-2" rows="2"></textarea><button onclick="saveProfile()" class="bg-green-600 text-white px-5 py-2 rounded-xl">حفظ</button><button onclick="toggleEditProfile()" class="bg-gray-300 px-5 py-2 rounded-xl mr-2">إلغاء</button></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6"><div class="bg-purple-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">رقم الهاتف</p><p id="profile-phone-display" class="font-bold">غير محدد</p></div><div class="bg-green-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">عدد المشتريات</p><p id="profile-purchases-count" class="font-bold text-xl">0</p></div><div class="bg-blue-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">عضو منذ</p><p id="profile-member-since" class="font-bold">--</p></div></div><div class="bg-gray-50 p-5 rounded-xl"><p class="font-bold mb-1">نبذة شخصية</p><p id="profile-bio-display" class="text-gray-700">لم يتم إضافة نبذة</p></div></div></div></div></section>
+
+  <section id="purchases-tab" class="hidden py-12 px-4"><div class="max-w-7xl mx-auto"><h2 class="text-2xl font-bold mb-4">📦 مشترياتي</h2><div class="flex flex-wrap gap-2 mb-6 border-b pb-2"><button onclick="filterPurchases('all')" id="filter-all" class="px-4 py-1 rounded-full text-sm bg-purple-600 text-white">الكل</button><button onclick="filterPurchases('course')" id="filter-course" class="px-4 py-1 rounded-full text-sm bg-gray-200">الدورات</button><button onclick="filterPurchases('book')" id="filter-book" class="px-4 py-1 rounded-full text-sm bg-gray-200">الكتب</button><button onclick="filterPurchases('product')" id="filter-product" class="px-4 py-1 rounded-full text-sm bg-gray-200">المنتجات</button></div><div id="purchases-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div><div id="no-purchases" class="text-center py-12 text-gray-500 hidden">لا توجد مشتريات بعد</div></div></section>
+
+  <section id="admin-tab" class="hidden py-12 px-4"><div class="max-w-6xl mx-auto space-y-8"><div class="bg-white p-6 rounded-2xl shadow"><h3 class="text-2xl font-bold mb-4">📋 طلبات المنتجات</h3><div id="orders-list" class="space-y-3 max-h-96 overflow-y-auto"></div><div id="no-orders" class="text-gray-500">لا توجد طلبات</div></div><div class="grid md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة دورة</h3><form id="course-form"><input id="course-title" placeholder="عنوان الدورة" class="w-full border p-2 rounded mb-2"><textarea id="course-desc" placeholder="الوصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="course-lessons" type="number" placeholder="دروس"><input id="course-hours" type="number" placeholder="ساعات"></div><div class="grid grid-cols-2 gap-2 mt-2"><input id="course-price" type="number" placeholder="السعر"><input id="course-rating" step="0.1" placeholder="تقييم"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="video" class="inline w-4"></i> فيديو الدورة<input type="file" id="course-video" accept="video/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="image"></i> صورة الدورة<input type="file" id="course-image" accept="image/*" class="hidden"></label><button type="submit" class="bg-purple-600 text-white w-full py-2 rounded-xl">رفع دورة</button></form></div><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة كتاب / منتج</h3><form id="admin-product-form"><select id="admin-prod-type" class="w-full border p-2 rounded mb-2"><option value="book">📖 كتاب (PDF)</option><option value="product">🎁 منتج (توصيل)</option></select><input id="prod-title" placeholder="الاسم" class="w-full border p-2 rounded mb-2"><textarea id="prod-desc" placeholder="وصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="prod-price" type="number" placeholder="السعر"><input id="prod-stock" type="number" placeholder="الكمية"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">🖼️ صورة المنتج<input type="file" id="prod-image" accept="image/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">📄 ملف PDF (للكتب فقط)<input type="file" id="prod-pdf" accept="application/pdf" class="hidden"></label><button type="submit" class="bg-green-600 text-white w-full py-2 rounded-xl">نشر</button></form></div></div><div class="grid grid-cols-4 gap-3 text-center"><div class="bg-purple-100 p-3 rounded-xl"><div id="stat-courses" class="text-2xl font-bold">0</div><div>دورات</div></div><div class="bg-green-100 p-3 rounded-xl"><div id="stat-products" class="text-2xl font-bold">0</div><div>منتجات/كتب</div></div><div class="bg-yellow-100 p-3 rounded-xl"><div id="stat-orders" class="text-2xl font-bold">0</div><div>طلبات</div></div><div class="bg-blue-100 p-3 rounded-xl"><div id="stat-users" class="text-2xl font-bold">0</div><div>مستخدمين</div></div></div></div></section>
+
+  <footer class="py-6 text-center text-gray-500 text-sm border-t mt-12"><p>© 2025 أكاديميتي — تعلم بلا حدود</p></footer>
+</div>
+
+<div id="auth-modal" class="modal-backdrop" onclick="closeAuthModal(event)"><div class="bg-white rounded-2xl max-w-md w-full p-6" onclick="event.stopPropagation()"><h3 id="auth-title" class="text-2xl font-bold mb-4">تسجيل الدخول</h3><input type="email" id="auth-email" placeholder="البريد الإلكتروني" class="w-full border p-3 rounded-xl mb-3"><input type="password" id="auth-password" placeholder="كلمة المرور" class="w-full border p-3 rounded-xl mb-3"><div class="flex gap-3 mt-3"><button onclick="handleAuth()" id="auth-action-btn" class="flex-1 bg-purple-600 text-white py-2 rounded-xl">دخول</button><button onclick="closeAuthModal()" class="flex-1 bg-gray-200 py-2 rounded-xl">إلغاء</button></div><div class="text-center text-sm mt-3"><button onclick="toggleAuthMode()" id="toggle-auth-link" class="text-purple-600">ليس لديك حساب؟ سجل الآن</button></div></div></div>
+
+<div id="order-modal" class="modal-backdrop" onclick="closeOrderModal(event)"><div class="bg-white rounded-2xl max-w-md w-full p-6" onclick="event.stopPropagation()"><h3 class="text-xl font-bold mb-3">تأكيد الطلب</h3><div id="order-product-info" class="mb-3"></div><input type="text" id="order-name" placeholder="الاسم الكامل" class="w-full border p-2 rounded mb-2"><input type="tel" id="order-phone" placeholder="رقم الهاتف" class="w-full border p-2 rounded mb-2"><textarea id="order-address" placeholder="العنوان التفصيلي" class="w-full border p-2 rounded mb-2" rows="2"></textarea><input type="number" id="order-qty" min="1" value="1" class="w-full border p-2 rounded mb-3"><button onclick="submitOrder()" class="bg-green-600 text-white w-full py-2 rounded-xl">تأكيد الحجز (الدفع عند الاستلام)</button><button onclick="closeOrderModal()" class="w-full mt-2 bg-gray-200 py-2 rounded-xl">إلغاء</button></div></div>
+
+<script>
+  let coursesData = [], storeItems = [];
+  let currentUser = JSON.parse(localStorage.getItem('academy_user') || 'null');
+  let users = JSON.parse(localStorage.getItem('academy_users') || '[]');
+  let userProfiles = JSON.parse(localStorage.getItem('academy_profiles') || '{}');
+  let userPurchases = JSON.parse(localStorage.getItem('academy_purchases') || '{}');
+  let productOrders = JSON.parse(localStorage.getItem('academy_orders') || '[]');
+  let storeCategory = 'book';
+  let currentPurchaseFilter = 'all';
+  let tempOrderItem = null;
+  const ADMIN_EMAIL = 'admin@academy.com';
+
+  if(!users.find(u=>u.email===ADMIN_EMAIL)) users.push({id:'admin', email:ADMIN_EMAIL, password:'123456', name:'المدير'});
+  localStorage.setItem('academy_users', JSON.stringify(users));
+
+  function saveUsers(){ localStorage.setItem('academy_users', JSON.stringify(users)); }
+  function saveProfiles(){ localStorage.setItem('academy_profiles', JSON.stringify(userProfiles)); }
+  function savePurchases(){ localStorage.setItem('academy_purchases', JSON.stringify(userPurchases)); }
+  function saveOrders(){ localStorage.setItem('academy_orders', JSON.stringify(productOrders)); updateAdminBadge(); }
+  function saveCourses(){ localStorage.setItem('academy_courses', JSON.stringify(coursesData)); }
+  function saveStore(){ localStorage.setItem('academy_store', JSON.stringify(storeItems)); }
+
+  function loadData(){
+    coursesData = JSON.parse(localStorage.getItem('academy_courses') || '[]');
+    storeItems = JSON.parse(localStorage.getItem('academy_store') || '[]');
+    renderCourses(); renderStore(); updateStats();
+  }
+
+  function showToast(msg){ let t=document.getElementById('toast')||(()=>{let d=document.createElement('div');d.id='toast';d.className='toast bg-gray-800 hidden';document.body.appendChild(d);return d;})(); t.textContent=msg; t.classList.remove('hidden'); t.classList.add('show'); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.classList.add('hidden'),400); },3000); }
+  function isAdmin(){ return currentUser && currentUser.email === ADMIN_EMAIL; }
+  function updateUserUI(){ 
+    const authBtn=document.getElementById('nav-auth-btn'); 
+    const adminBtn=document.getElementById('tab-admin'); 
+    const profileBtn=document.getElementById('tab-profile'); 
+    if(currentUser){ 
+      authBtn.innerHTML=`<i data-lucide="log-out" class="w-4 h-4 ml-1"></i> ${currentUser.email.split('@')[0]}`; 
+      authBtn.onclick=logout; 
+      adminBtn.classList.toggle('hidden',!isAdmin()); 
+      profileBtn.classList.remove('hidden'); 
+    } else { 
+      authBtn.innerHTML=`<i data-lucide="log-in" class="w-4 h-4 ml-1"></i> دخول`; 
+      authBtn.onclick=()=>openAuthModal('login'); 
+      adminBtn.classList.add('hidden'); 
+      profileBtn.classList.add('hidden'); 
+    } 
+    lucide.createIcons(); 
+  }
+  function logout(){ currentUser=null; localStorage.removeItem('academy_user'); showToast('تم تسجيل الخروج'); updateUserUI(); switchTab('courses'); }
+  
+  function switchTab(tab){ 
+    ['courses','store','about','profile','admin','purchases'].forEach(t=>{ document.getElementById(t+'-tab').style.display = (t===tab?'block':'none'); }); 
+    document.getElementById('hero-section').style.display = (tab==='courses'?'block':'none'); 
+    document.querySelectorAll('[id^="tab-"]').forEach(btn=>btn.classList.remove('active')); 
+    const activeBtn=document.getElementById(`tab-${tab}`); if(activeBtn) activeBtn.classList.add('active'); 
+    if(tab==='profile') loadProfileUI(); 
+    if(tab==='purchases') renderPurchasesTab(); 
+    if(tab==='admin'){ updateStats(); renderAdminOrders(); } 
+  }
+  
+  function openAuthModal(mode){ window.authMode=mode; document.getElementById('auth-title').innerText = mode==='login'?'تسجيل الدخول':'إنشاء حساب'; document.getElementById('auth-action-btn').innerText = mode==='login'?'دخول':'تسجيل'; document.getElementById('toggle-auth-link').innerText = mode==='login'?'ليس لديك حساب؟ سجل الآن':'لديك حساب؟ سجل دخول'; document.getElementById('auth-modal').classList.add('active'); }
+  function closeAuthModal(e){ if(!e || e.target.classList.contains('modal-backdrop')) document.getElementById('auth-modal').classList.remove('active'); }
+  function toggleAuthMode(){ const newMode = window.authMode==='login'?'signup':'login'; openAuthModal(newMode); }
+  
+  function handleAuth(){ 
+    const email=document.getElementById('auth-email').value.trim(); 
+    const pwd=document.getElementById('auth-password').value.trim(); 
+    if(!email||!pwd){ showToast('املأ البريد وكلمة المرور'); return; } 
+    if(window.authMode==='signup'){ 
+      if(users.find(u=>u.email===email)){ showToast('البريد موجود'); return; } 
+      const newUser={id:Date.now().toString(), email, password:pwd, name:email.split('@')[0], createdAt:new Date().toISOString()}; 
+      users.push(newUser); 
+      userProfiles[newUser.id]={name:newUser.name, phone:'', bio:'', avatar:null}; 
+      saveUsers(); saveProfiles(); 
+      currentUser=newUser; 
+      localStorage.setItem('academy_user',JSON.stringify(currentUser)); 
+      showToast('تم إنشاء الحساب بنجاح'); 
+      closeAuthModal(); 
+      updateUserUI(); 
+    } else { 
+      const user=users.find(u=>u.email===email && u.password===pwd); 
+      if(!user){ showToast('بيانات غير صحيحة'); return; } 
+      currentUser=user; 
+      localStorage.setItem('academy_user',JSON.stringify(currentUser)); 
+      showToast(`مرحباً ${user.email}`); 
+      closeAuthModal(); 
+      updateUserUI(); 
+    } 
+  }
+  
+  function loadProfileUI(){ 
+    if(!currentUser) return; 
+    const prof=userProfiles[currentUser.id]||{}; 
+    document.getElementById('profile-name-display').innerText=prof.name||currentUser.email.split('@')[0]; 
+    document.getElementById('profile-email-display').innerText=currentUser.email; 
+    document.getElementById('profile-phone-display').innerText=prof.phone||'غير محدد'; 
+    document.getElementById('profile-bio-display').innerText=prof.bio||'لم تضف نبذة'; 
+    document.getElementById('profile-purchases-count').innerText=(userPurchases[currentUser.id]||[]).length; 
+    if(prof.avatar) document.getElementById('profile-avatar').src=prof.avatar; 
+    document.getElementById('profile-member-since').innerText=currentUser.createdAt?new Date(currentUser.createdAt).toLocaleDateString():'جديد'; 
+  }
+  function toggleEditProfile(){ const form=document.getElementById('editProfileForm'); form.classList.toggle('hidden'); if(!form.classList.contains('hidden')){ const prof=userProfiles[currentUser.id]||{}; document.getElementById('edit-name').value=prof.name||''; document.getElementById('edit-phone').value=prof.phone||''; document.getElementById('edit-bio').value=prof.bio||''; } }
+  function saveProfile(){ if(!currentUser) return; if(!userProfiles[currentUser.id]) userProfiles[currentUser.id]={}; userProfiles[currentUser.id].name=document.getElementById('edit-name').value; userProfiles[currentUser.id].phone=document.getElementById('edit-phone').value; userProfiles[currentUser.id].bio=document.getElementById('edit-bio').value; saveProfiles(); loadProfileUI(); toggleEditProfile(); showToast('تم حفظ الملف'); }
+  document.getElementById('avatarUpload').addEventListener('change',e=>{ if(e.target.files[0]&&currentUser){ const fr=new FileReader(); fr.onload=ev=>{ userProfiles[currentUser.id].avatar=ev.target.result; saveProfiles(); document.getElementById('profile-avatar').src=ev.target.result; showToast('تم تحديث الصورة'); }; fr.readAsDataURL(e.target.files[0]); } });
+  
+  function renderPurchasesTab(){ 
+    if(!currentUser) return; 
+    const purchases=userPurchases[currentUser.id]||[]; 
+    let filtered=purchases; 
+    if(currentPurchaseFilter==='course') filtered=purchases.filter(p=>p.type==='course'); 
+    else if(currentPurchaseFilter==='book') filtered=purchases.filter(p=>p.type==='book'); 
+    else if(currentPurchaseFilter==='product') filtered=purchases.filter(p=>p.type==='product'); 
+    const grid=document.getElementById('purchases-grid'); 
+    const noDiv=document.getElementById('no-purchases'); 
+    grid.innerHTML=''; 
+    if(filtered.length===0){ noDiv.classList.remove('hidden'); } 
+    else { noDiv.classList.add('hidden'); 
+      filtered.forEach(p=>{ const card=document.createElement('div'); card.className='bg-white rounded-xl shadow p-3'; 
+      card.innerHTML=`<img src="${p.image||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23ddd%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2240%22 text-anchor=%22middle%22 dy=%22.3em%22%3E📦%3C/text%3E%3C/svg%3E'}" class="w-full h-36 object-cover rounded-lg"><h3 class="font-bold mt-2">${p.title}</h3><p class="text-sm text-gray-600">السعر: ${p.price} د.ع</p><div class="mt-2">${p.type==='course'? '<button onclick="viewCourseContent()" class="bg-purple-100 px-3 py-1 rounded-full text-sm">مشاهدة الفيديو</button>' : (p.type==='book'? '<a href="'+p.fileData+'" download class="bg-blue-100 px-3 py-1 rounded-full text-sm inline-block">📥 تحميل PDF</a>' : '<span class="text-orange-600">🚚 طلب قيد التوصيل</span>')}</div>`; 
+      grid.appendChild(card); }); 
+    } lucide.createIcons(); 
+  }
+  function filterPurchases(f){ currentPurchaseFilter=f; document.querySelectorAll('[id^="filter-"]').forEach(btn=>btn.classList.remove('bg-purple-600','text-white','bg-gray-200')); if(f==='all') document.getElementById('filter-all').classList.add('bg-purple-600','text-white'); else if(f==='course') document.getElementById('filter-course').classList.add('bg-purple-600','text-white'); else if(f==='book') document.getElementById('filter-book').classList.add('bg-purple-600','text-white'); else if(f==='product') document.getElementById('filter-product').classList.add('bg-purple-600','text-white'); renderPurchasesTab(); }
+  function viewCourseContent(){ showToast('سيتم تشغيل محتوى الدورة'); }
+  
+  function setStoreCategory(cat){ storeCategory=cat; document.getElementById('store-book-btn').className=cat==='book'?'px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow':'px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700'; document.getElementById('store-product-btn').className=cat==='product'?'px-6 py-2 rounded-full font-bold bg-green-600 text-white shadow':'px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700'; document.getElementById('store-title').innerHTML=cat==='book'?'الكتب <span class="text-blue-600">الرقمية</span>':'المنتجات <span class="text-green-600">الأصلية</span>'; document.getElementById('store-sub').innerText=cat==='book'?'كتب PDF قابلة للتحميل':'منتجات تقنية - توصيل سريع'; renderStore(); }
+  function renderStore(){ const items=storeItems.filter(i=>i.category===storeCategory); const grid=document.getElementById('store-grid'); const noDiv=document.getElementById('no-store'); grid.innerHTML=''; if(items.length===0){ noDiv.classList.remove('hidden'); noDiv.innerText='لا توجد '+ (storeCategory==='book'?'كتب':'منتجات'); } else { noDiv.classList.add('hidden'); items.forEach(item=>{ const btnText=storeCategory==='book'?'📥 شراء و تحميل':'🛒 شراء (توصيل)'; const card=document.createElement('div'); card.className='card-scale bg-white rounded-2xl overflow-hidden shadow'; card.innerHTML=`<img src="${item.image_data||''}" class="h-44 w-full object-cover"><div class="p-4"><h3 class="font-bold">${item.title}</h3><p class="text-sm text-gray-500">${item.description.substring(0,60)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold text-purple-600">${item.price} د.ع</span><button onclick="buyItem('${item.id}','${storeCategory}')" class="bg-indigo-100 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-sm transition">${btnText}</button></div></div>`; grid.appendChild(card); }); } lucide.createIcons(); }
+  
+  function buyItem(id, type){ 
+    if(!currentUser){ showToast('يرجى تسجيل الدخول أولاً'); openAuthModal('login'); return; } 
+    const item=storeItems.find(i=>i.id===id); 
+    if(!item) return; 
+    if(type==='book'){ 
+      const purchaseRecord={ id:Date.now().toString(), type:'book', title:item.title, price:item.price, image:item.image_data, fileData:item.file_data, purchaseDate:new Date().toISOString() };
+      if(!userPurchases[currentUser.id]) userPurchases[currentUser.id]=[]; 
+      userPurchases[currentUser.id].push(purchaseRecord); 
+      savePurchases(); 
+      showToast(`تم شراء الكتاب: ${item.title}`); 
+      renderPurchasesTab(); 
+      if(item.file_data){ const a=document.createElement('a'); a.href=item.file_data; a.download=`${item.title}.pdf`; a.click(); }
+    } else { 
+      tempOrderItem=item; 
+      document.getElementById('order-product-info').innerHTML=`<strong>${item.title}</strong><br>السعر: ${item.price} د.ع`; 
+      document.getElementById('order-modal').classList.add('active'); 
+    } 
+  }
+  function closeOrderModal(){ tempOrderItem=null; document.getElementById('order-modal').classList.remove('active'); }
+  function submitOrder(){ 
+    if(!currentUser||!tempOrderItem) return; 
+    const name=document.getElementById('order-name').value; 
+    const phone=document.getElementById('order-phone').value; 
+    const address=document.getElementById('order-address').value; 
+    const qty=parseInt(document.getElementById('order-qty').value); 
+    if(!name||!phone||!address){ showToast('الرجاء ملء جميع بيانات التوصيل'); return; }
+    const order={ id:Date.now(), productId:tempOrderItem.id, productTitle:tempOrderItem.title, price:tempOrderItem.price, quantity:qty, customerName:name, customerPhone:phone, address, userId:currentUser.id, userEmail:currentUser.email, status:'جديد', createdAt:new Date().toISOString() };
+    productOrders.push(order); 
+    saveOrders(); 
+    if(!userPurchases[currentUser.id]) userPurchases[currentUser.id]=[]; 
+    userPurchases[currentUser.id].push({ id:`order_${order.id}`, type:'product', title:`${tempOrderItem.title} (طلب رقم ${order.id})`, price:tempOrderItem.price*qty, image:tempOrderItem.image_data, purchaseDate:new Date().toISOString() }); 
+    savePurchases(); 
+    showToast('تم إرسال طلبك، سيتواصل معك المندوب'); 
+    closeOrderModal(); 
+    renderPurchasesTab(); 
+    updateAdminBadge(); 
+  }
+  
+  function renderAdminOrders(){ 
+    const container=document.getElementById('orders-list'); 
+    if(!container) return; 
+    if(productOrders.length===0){ 
+      document.getElementById('no-orders').classList.remove('hidden'); 
+      container.innerHTML=''; 
+    } else { 
+      document.getElementById('no-orders').classList.add('hidden'); 
+      container.innerHTML=productOrders.map(o=>`<div class="border p-3 rounded-xl bg-yellow-50"><p><strong>${o.productTitle}</strong> | الكمية: ${o.quantity}</p><p>العميل: ${o.customerName} | هاتف: ${o.customerPhone}</p><p>العنوان: ${o.address}</p><small>${new Date(o.createdAt).toLocaleString()}</small></div>`).join(''); 
+    } 
+  }
+  function updateAdminBadge(){ const statOrders=document.getElementById('stat-orders'); if(statOrders) statOrders.innerText=productOrders.length; }
+  function updateStats(){ document.getElementById('stat-courses').innerText=coursesData.length; document.getElementById('stat-products').innerText=storeItems.length; document.getElementById('stat-users').innerText=users.length; updateAdminBadge(); }
+  
+  function renderCourses(){ 
+    const grid=document.getElementById('courses-grid'); 
+    if(!grid) return; 
+    grid.innerHTML=''; 
+    if(coursesData.length===0){ document.getElementById('no-courses').classList.remove('hidden'); } 
+    else { document.getElementById('no-courses').classList.add('hidden'); 
+      coursesData.forEach(c=>{ const card=document.createElement('div'); card.className='bg-white rounded-2xl shadow overflow-hidden'; 
+      card.innerHTML=`<img src="${c.image_data}" class="h-40 w-full object-cover"><div class="p-4"><h3 class="font-bold">${c.title}</h3><p>${c.description.substring(0,70)}</p><div class="flex justify-between mt-3"><span class="text-xl font-bold">${c.price} د.ع</span><button onclick="purchaseCourse('${c.id}')" class="bg-purple-100 px-4 py-1 rounded-full text-sm">شراء الدورة</button></div></div>`; 
+      grid.appendChild(card); }); 
+    } lucide.createIcons(); 
+  }
+  
+  function purchaseCourse(id){ 
+    if(!currentUser){ showToast('سجل دخول أولاً'); openAuthModal('login'); return; } 
+    const course=coursesData.find(c=>c.id===id); 
+    if(!course) return; 
+    if(!userPurchases[currentUser.id]) userPurchases[currentUser.id]=[]; 
+    userPurchases[currentUser.id].push({ id:Date.now().toString(), type:'course', title:course.title, price:course.price, image:course.image_data, videoUrl:course.video_data, purchaseDate:new Date().toISOString() }); 
+    savePurchases(); 
+    showToast(`تم شراء الدورة: ${course.title}`); 
+    renderPurchasesTab(); 
+  }
+  
+  document.getElementById('course-form')?.addEventListener('submit', async(e)=>{ 
+    e.preventDefault(); 
+    if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
+    const title=document.getElementById('course-title').value; 
+    const desc=document.getElementById('course-desc').value; 
+    const price=parseInt(document.getElementById('course-price').value); 
+    const lessons=parseInt(document.getElementById('course-lessons').value); 
+    const hours=parseInt(document.getElementById('course-hours').value); 
+    const rating=parseFloat(document.getElementById('course-rating').value); 
+    const videoInput=document.getElementById('course-video'); 
+    const imageInput=document.getElementById('course-image'); 
+    if(!videoInput.files[0]||!imageInput.files[0]){ showToast('اختر فيديو وصورة'); return; } 
+    const readFile=(file)=>new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file);});
+    const videoData=await readFile(videoInput.files[0]); 
+    const imageData=await readFile(imageInput.files[0]); 
+    const newCourse={ id:Date.now().toString(), type:'course', title, description:desc, lessons, hours, price, rating, video_data:videoData, image_data:imageData, instructor_name:'المدرب', students:0 }; 
+    coursesData.push(newCourse); 
+    saveCourses(); 
+    renderCourses(); 
+    showToast('تم إضافة الدورة'); 
+    e.target.reset(); 
+  });
+  
+  document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
+    e.preventDefault(); 
+    if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
+    const type=document.getElementById('admin-prod-type').value; 
+    const title=document.getElementById('prod-title').value; 
+    const desc=document.getElementById('prod-desc').value; 
+    const price=parseInt(document.getElementById('prod-price').value); 
+    const stock=parseInt(document.getElementById('prod-stock').value); 
+    const imageFile=document.getElementById('prod-image').files[0]; 
+    const pdfFile=document.getElementById('prod-pdf').files[0]; 
+    if(!imageFile){ showToast('اختر صورة'); return; } 
+    const readFile=(file)=>new Promise(r=>{const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file);});
+    const imageData=await readFile(imageFile); 
+    let fileData=null; 
+    if(type==='book' && pdfFile){ fileData=await readFile(pdfFile); } 
+    const newItem={ id:Date.now().toString(), type:'product', category:type, title, description:desc, price, hours:stock, image_data:imageData, file_data:fileData }; 
+    storeItems.push(newItem); 
+    saveStore(); 
+    renderStore(); 
+    showToast(`تم نشر ${type==='book'?'الكتاب':'المنتج'}`); 
+    e.target.reset(); 
+  });
+  
+  loadData();
+  lucide.createIcons(); 
+  updateUserUI(); 
+  switchTab('courses');
+</script>
+<div id="toast" class="toast bg-gray-800 hidden"></div>
+</body>
+</html>
