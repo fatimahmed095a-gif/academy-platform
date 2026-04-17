@@ -80,9 +80,7 @@
   
   let coursesData = [], storeItems = [];
   let currentUser = JSON.parse(localStorage.getItem('academy_user') || 'null');
-  let users = [];
   let userProfiles = JSON.parse(localStorage.getItem('academy_profiles') || '{}');
-  let userPurchases = JSON.parse(localStorage.getItem('academy_purchases') || '{}');
   let productOrders = JSON.parse(localStorage.getItem('academy_orders') || '[]');
   let storeCategory = 'book';
   let currentPurchaseFilter = 'all';
@@ -129,10 +127,25 @@
     }
   }
 
+  async function loadPurchasesFromAPI() {
+    if(!currentUser) return;
+    try {
+      const response = await fetch(`${API_URL}/api/purchases/${currentUser.id}`);
+      const data = await response.json();
+      if(Array.isArray(data)){
+        localStorage.setItem('academy_purchases', JSON.stringify(data));
+      }
+      renderPurchasesTab();
+    } catch(error) {
+      console.error('Error loading purchases:', error);
+    }
+  }
+
   async function loadAllData() {
     await loadCoursesFromAPI();
     await loadBooksFromAPI();
     await loadProductsFromAPI();
+    await loadPurchasesFromAPI();
   }
 
   // ===== المصادقة مع Supabase عبر API =====
@@ -290,19 +303,8 @@
       });
       const data = await response.json();
       if(data.success){
-        if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
-        userPurchases[currentUser.id].push({ 
-          id: Date.now().toString(), 
-          type: 'course', 
-          title: course.title, 
-          price: course.price, 
-          image: course.image_url || course.image_data, 
-          videoUrl: course.video_url || course.video_data, 
-          purchaseDate: new Date().toISOString() 
-        }); 
-        savePurchases(); 
-        showToast(`✅ تم شراء الدورة: ${course.title}`); 
-        renderPurchasesTab();
+        showToast(`✅ تم شراء الدورة: ${course.title}`);
+        await loadPurchasesFromAPI();
       } else {
         showToast('❌ خطأ في عملية الشراء: ' + (data.error || 'غير معروف'));
       }
@@ -335,20 +337,8 @@
         });
         const data = await response.json();
         if(data.success){
-          const purchaseRecord = { 
-            id: Date.now().toString(), 
-            type: 'book', 
-            title: item.title, 
-            price: item.price, 
-            image: item.image_url || item.image_data, 
-            fileData: item.file_url || item.file_data, 
-            purchaseDate: new Date().toISOString() 
-          };
-          if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
-          userPurchases[currentUser.id].push(purchaseRecord); 
-          savePurchases(); 
-          showToast(`✅ تم شراء الكتاب: ${item.title}`); 
-          renderPurchasesTab(); 
+          showToast(`✅ تم شراء الكتاب: ${item.title}`);
+          await loadPurchasesFromAPI();
           if(item.file_url || item.file_data){ 
             const a = document.createElement('a'); 
             a.href = item.file_url || item.file_data; 
@@ -386,15 +376,10 @@
       });
       const data = await response.json();
       if(data.success){
-        const order = { id: Date.now(), productId: tempOrderItem.id, productTitle: tempOrderItem.title, price: tempOrderItem.price, quantity: qty, customerName: name, customerPhone: phone, address, userId: currentUser.id, userEmail: currentUser.email, status: 'جديد', createdAt: new Date().toISOString() };
-        productOrders.push(order); 
-        saveOrders(); 
-        if(!userPurchases[currentUser.id]) userPurchases[currentUser.id] = []; 
-        userPurchases[currentUser.id].push({ id: `order_${order.id}`, type: 'product', title: `${tempOrderItem.title} (طلب رقم ${order.id})`, price: tempOrderItem.price * qty, image: tempOrderItem.image_url || tempOrderItem.image_data, purchaseDate: new Date().toISOString() }); 
-        savePurchases(); 
+        productOrders.push({ id: Date.now(), productId: tempOrderItem.id, productTitle: tempOrderItem.title, price: tempOrderItem.price, quantity: qty, customerName: name, customerPhone: phone, address, userId: currentUser.id, userEmail: currentUser.email, status: 'جديد', createdAt: new Date().toISOString() }); 
+        localStorage.setItem('academy_orders', JSON.stringify(productOrders));
         showToast('✅ تم إرسال طلبك، سيتواصل معك المندوب'); 
         closeOrderModal(); 
-        renderPurchasesTab(); 
         updateAdminBadge();
       } else {
         showToast('❌ خطأ في إرسال الطلب: ' + (data.error || 'غير معروف'));
@@ -406,12 +391,7 @@
   }
 
   // ===== وظائف مساعدة =====
-  function saveUsers(){ localStorage.setItem('academy_users', JSON.stringify(users)); }
   function saveProfiles(){ localStorage.setItem('academy_profiles', JSON.stringify(userProfiles)); }
-  function savePurchases(){ localStorage.setItem('academy_purchases', JSON.stringify(userPurchases)); }
-  function saveOrders(){ localStorage.setItem('academy_orders', JSON.stringify(productOrders)); updateAdminBadge(); }
-  function saveCourses(){ localStorage.setItem('academy_courses', JSON.stringify(coursesData)); }
-  function saveStore(){ localStorage.setItem('academy_store', JSON.stringify(storeItems)); }
 
   function showToast(msg){ let t = document.getElementById('toast') || (()=>{let d=document.createElement('div');d.id='toast';d.className='toast bg-gray-800 hidden';document.body.appendChild(d);return d;})(); t.textContent = msg; t.classList.remove('hidden'); t.classList.add('show'); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.classList.add('hidden'),400); },3000); }
   function isAdmin(){ return currentUser && currentUser.email === ADMIN_EMAIL; }
@@ -457,7 +437,8 @@
     document.getElementById('profile-email-display').innerText = currentUser.email; 
     document.getElementById('profile-phone-display').innerText = prof.phone || 'غير محدد'; 
     document.getElementById('profile-bio-display').innerText = prof.bio || 'لم تضف نبذة'; 
-    document.getElementById('profile-purchases-count').innerText = (userPurchases[currentUser.id] || []).length; 
+    const purchases = JSON.parse(localStorage.getItem('academy_purchases') || '[]');
+    document.getElementById('profile-purchases-count').innerText = purchases.length; 
     if(prof.avatar) document.getElementById('profile-avatar').src = prof.avatar; 
     document.getElementById('profile-member-since').innerText = currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'جديد'; 
   }
@@ -469,7 +450,7 @@
   
   function renderPurchasesTab(){ 
     if(!currentUser) return; 
-    const purchases = userPurchases[currentUser.id] || []; 
+    let purchases = JSON.parse(localStorage.getItem('academy_purchases') || '[]');
     let filtered = purchases; 
     if(currentPurchaseFilter === 'course') filtered = purchases.filter(p => p.type === 'course'); 
     else if(currentPurchaseFilter === 'book') filtered = purchases.filter(p => p.type === 'book'); 
@@ -531,6 +512,10 @@
       grid.appendChild(card); }); 
     } lucide.createIcons(); 
   }
+  
+  // تنظيف localStorage القديم (مرة واحدة)
+  if(localStorage.getItem('academy_courses')) localStorage.removeItem('academy_courses');
+  if(localStorage.getItem('academy_store')) localStorage.removeItem('academy_store');
   
   // بدء التحميل
   loadAllData();
