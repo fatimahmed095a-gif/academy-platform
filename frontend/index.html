@@ -65,7 +65,32 @@
 
   <section id="store-tab" class="hidden py-12 px-4"><div class="max-w-7xl mx-auto"><div class="flex gap-3 mb-8 border-b pb-3"><button onclick="setStoreCategory('book')" id="store-book-btn" class="px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow"><i data-lucide="book-open" class="w-4 h-4 inline ml-1"></i>الكتب</button><button onclick="setStoreCategory('product')" id="store-product-btn" class="px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700"><i data-lucide="package" class="w-4 h-4 inline ml-1"></i>المنتجات</button></div><h2 id="store-title" class="text-3xl font-bold mb-2">الكتب <span class="text-blue-600">الرقمية</span></h2><p id="store-sub" class="text-gray-600 mb-6">كتب PDF قابلة للتحميل الفوري</p><div id="store-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div><div id="no-store" class="text-center py-12 text-gray-500 hidden"></div></div></section>
 
-  <section id="about-tab" class="hidden py-16 px-6"><div class="max-w-5xl mx-auto text-center"><h2 class="text-3xl font-bold mb-8">من <span class="text-purple-600">نحن</span></h2><div class="grid md:grid-cols-3 gap-8"><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">🎯</div><h3 class="text-xl font-bold">رسالتنا</h3><p class="text-gray-600 mt-2">تقديم تعليم متقن وسهل الوصول</p></div><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">👁️</div><h3 class="text-xl font-bold">رؤيتنا</h3><p class="text-gray-600 mt-2">المنصة الأولى للتعلم الذاتي</p></div><div class="bg-white p-6 rounded-2xl shadow"><div class="text-5xl mb-3">⭐</div><h3 class="text-xl font-bold">أهدافنا</h3><p class="text-gray-600 mt-2">محتوى عالي الجودة يناسب سوق العمل</p></div></div></div></section>
+  <!-- قسم "من نحن" - تم تعديل الترتيب حسب طلبك: الرؤية أولاً، ثم الرسالة، ثم الأهداف -->
+  <section id="about-tab" class="hidden py-16 px-6">
+    <div class="max-w-5xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-8">من <span class="text-purple-600">نحن</span></h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- الرؤية في الأعلى -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <div class="text-5xl mb-3">👁️</div>
+          <h3 class="text-xl font-bold">رؤيتنا</h3>
+          <p class="text-gray-600 mt-2">المنصة الأولى للتعلم الذاتي</p>
+        </div>
+        <!-- الرسالة في المنتصف -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <div class="text-5xl mb-3">🎯</div>
+          <h3 class="text-xl font-bold">رسالتنا</h3>
+          <p class="text-gray-600 mt-2">تقديم تعليم متقن وسهل الوصول</p>
+        </div>
+        <!-- الأهداف في الأسفل -->
+        <div class="bg-white p-6 rounded-2xl shadow">
+          <div class="text-5xl mb-3">⭐</div>
+          <h3 class="text-xl font-bold">أهدافنا</h3>
+          <p class="text-gray-600 mt-2">محتوى عالي الجودة يناسب سوق العمل</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section id="profile-tab" class="hidden py-12 px-4"><div class="max-w-5xl mx-auto space-y-6"><div class="bg-white rounded-2xl shadow-lg overflow-hidden"><div class="h-28 bg-gradient-to-r from-purple-500 to-indigo-500"></div><div class="px-6 pb-6 relative"><div class="flex flex-col md:flex-row gap-4 -mt-12 items-end"><div class="relative"><img id="profile-avatar" class="w-28 h-28 rounded-2xl border-4 border-white shadow-md bg-gray-100 object-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect width='100' height='100' fill='%23ddd'/%3E%3Ctext x='50' y='67' text-anchor='middle' font-size='50'%3E👤%3C/text%3E%3C/svg%3E"><label for="avatarUpload" class="absolute bottom-1 right-1 bg-purple-500 text-white p-1.5 rounded-full cursor-pointer"><i data-lucide="camera" class="w-4 h-4"></i></label><input type="file" id="avatarUpload" accept="image/*" class="hidden"></div><div class="flex-1"><h2 id="profile-name-display" class="text-2xl font-bold">المستخدم</h2><p id="profile-email-display" class="text-gray-500 text-sm">البريد</p><div class="flex flex-wrap gap-2 mt-2"><button onclick="toggleEditProfile()" class="bg-blue-500 text-white px-4 py-1.5 rounded-full text-sm">تعديل الملف</button><button onclick="switchTab('purchases')" class="bg-gray-200 text-gray-800 px-4 py-1.5 rounded-full text-sm">مشترياتي</button></div></div></div><div id="editProfileForm" class="hidden mt-6 border-t pt-4"><input type="text" id="edit-name" placeholder="الاسم الكامل" class="w-full border rounded-xl p-2 mb-2"><input type="tel" id="edit-phone" placeholder="رقم الهاتف" class="w-full border rounded-xl p-2 mb-2"><textarea id="edit-bio" placeholder="نبذة عنك" class="w-full border rounded-xl p-2 mb-2" rows="2"></textarea><button onclick="saveProfile()" class="bg-green-600 text-white px-5 py-2 rounded-xl">حفظ</button><button onclick="toggleEditProfile()" class="bg-gray-300 px-5 py-2 rounded-xl mr-2">إلغاء</button></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6"><div class="bg-purple-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">رقم الهاتف</p><p id="profile-phone-display" class="font-bold">غير محدد</p></div><div class="bg-green-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">عدد المشتريات</p><p id="profile-purchases-count" class="font-bold text-xl">0</p></div><div class="bg-blue-50 p-4 rounded-xl"><p class="text-gray-500 text-sm">عضو منذ</p><p id="profile-member-since" class="font-bold">--</p></div></div><div class="bg-gray-50 p-5 rounded-xl"><p class="font-bold mb-1">نبذة شخصية</p><p id="profile-bio-display" class="text-gray-700">لم يتم إضافة نبذة</p></div></div></div></div></section>
 

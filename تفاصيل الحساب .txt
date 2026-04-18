@@ -3,8 +3,8 @@ fatimahmed095a@gmail.com
 fastnw132zh2
 
 
-
-
+Database password
+AcademyPlatform2024
 
 الادمن 
 admin@academy.com
@@ -13,3 +13,26 @@ admin@academy.com
 تشغيل محلي 
 python run.py
 
+git add .
+
+# 2. عمل commit للتغييرات
+git commit -m 
+# 3. رفع التغييرات إلى GitHub
+git push origin main
+
+
+رندر لرفع التغييرات 
+
+https://dashboard.render.com/web/srv-d7h74su7r5hc73e3jrs0
+
+
+Cloudflare R2
+https://dash.cloudflare.com/68abc98bcef9ff6c6471cdd592d4094e/r2/api-tokens/success
+
+
+r2
+Public URL	https://pub-81cde84cb32b4392b5ffe20735d33097.r2.dev
+Account ID	68abc98bcef9ff6c6471cdd592d4094e
+Access Key ID	c056df2bce9d0974127b6bab5e4bf725
+Secret Access Key	40d27dd171158496732d980fd06c35f33bdbf0a7f234781ec0ad58f3d5e555c9
+S3 Endpoint	https://68abc98bcef9ff6c6471cdd592d4094e.r2.cloudflarestorage.com
