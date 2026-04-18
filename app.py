@@ -33,6 +33,11 @@ R2_ENDPOINT = os.environ.get("R2_ENDPOINT", "https://68abc98bcef9ff6c6471cdd592d
 R2_BUCKET = os.environ.get("R2_BUCKET", "academy-storage")
 R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "https://pub-81cde84cb32b4392b5ffe20735d33097.r2.dev")
 
+def is_admin():
+    """التحقق من صلاحيات المدير (يجب تمريرها من الـ request)"""
+    # هذه دالة مبسطة - في الحقيقة يجب التحقق من token
+    return True  # مؤقتاً، يمكنك تعديلها لاحقاً
+
 def upload_to_r2(file_data, file_name, folder):
     """رفع ملف إلى Cloudflare R2"""
     try:
@@ -223,6 +228,28 @@ def add_book():
         print(f"❌ Error saving book: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
+# ===== DELETE و UPDATE للكتب =====
+@app.route('/api/books/<id>', methods=['DELETE'])
+def delete_book(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    try:
+        supabase.table('books').delete().eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/books/<id>', methods=['PUT'])
+def update_book(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    data = request.json
+    try:
+        supabase.table('books').update(data).eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 # ===== API المنتجات =====
 @app.route('/api/products', methods=['GET'])
 def get_products():
@@ -268,6 +295,28 @@ def add_product():
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
         print(f"❌ Error saving product: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# ===== DELETE و UPDATE للمنتجات =====
+@app.route('/api/products/<id>', methods=['DELETE'])
+def delete_product(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    try:
+        supabase.table('products').delete().eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/products/<id>', methods=['PUT'])
+def update_product(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    data = request.json
+    try:
+        supabase.table('products').update(data).eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API الدورات (مع رفع الفيديو إلى R2) =====
@@ -325,6 +374,28 @@ def add_course():
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
         print(f"❌ Error saving course: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# ===== DELETE و UPDATE للدورات =====
+@app.route('/api/courses/<id>', methods=['DELETE'])
+def delete_course(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    try:
+        supabase.table('courses').delete().eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/api/courses/<id>', methods=['PUT'])
+def update_course(id):
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    data = request.json
+    try:
+        supabase.table('courses').update(data).eq('id', id).execute()
+        return jsonify({'success': True})
+    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API المشتريات =====
