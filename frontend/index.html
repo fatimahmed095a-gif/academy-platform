@@ -144,11 +144,9 @@
 
   // ===== تحميل جميع البيانات (العامة + الخاصة) =====
   async function loadAllData() {
-    // تحميل المحتوى العام أولاً (يظهر للجميع)
     await loadCoursesFromAPI();
     await loadBooksFromAPI();
     await loadProductsFromAPI();
-    // تحميل مشتريات المستخدم الخاص (إذا كان مسجل دخول)
     if(currentUser) {
       await loadPurchasesFromAPI();
     }
@@ -242,8 +240,8 @@
     }
   });
 
-  // ===== إضافة كتاب/منتج (للمدير) =====
-document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
+  // ===== إضافة كتاب/منتج (للمدير) - النسخة المعدلة =====
+  document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
     e.preventDefault(); 
     if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
     const type = document.getElementById('admin-prod-type').value; 
@@ -258,16 +256,27 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
       showToast('❌ الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
-    if(!imageFile){ showToast('❌ اختر صورة'); return; } 
     
     const readFile = (file) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
-    const imageData = await readFile(imageFile); 
-    let fileData = null; 
-    if(type === 'book' && pdfFile){ fileData = await readFile(pdfFile); } 
+    
+    let imageData = null;
+    let fileData = null;
+    
+    if(imageFile){
+      imageData = await readFile(imageFile);
+      console.log('✅ Image loaded, length:', imageData.length);
+    } else {
+      showToast('❌ اختر صورة');
+      return;
+    }
+    
+    if(type === 'book' && pdfFile){
+      fileData = await readFile(pdfFile);
+      console.log('✅ PDF loaded, length:', fileData.length);
+    }
     
     const endpoint = type === 'book' ? '/api/books' : '/api/products';
     
-    // تأكد من تطابق أسماء الحقول مع ما يتوقعه الخادم
     const body = type === 'book' 
       ? { 
           title: title, 
@@ -275,7 +284,7 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
           price: price, 
           quantity: stock, 
           image_data: imageData, 
-          file_data: fileData, 
+          file_data: fileData || null, 
           author: 'المؤلف' 
         }
       : { 
@@ -287,7 +296,8 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
           seller: 'البائع' 
         };
     
-    console.log('Sending data:', body); // للتصحيح
+    console.log('📤 Sending data to:', endpoint);
+    console.log('📤 Image data present:', !!imageData);
     
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -296,7 +306,7 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
         body: JSON.stringify(body)
       });
       const data = await response.json();
-      console.log('Response:', data); // للتصحيح
+      console.log('📥 Response:', data);
       if(data.success){
         showToast(`✅ تم نشر ${type === 'book' ? 'الكتاب' : 'المنتج'}`);
         e.target.reset();
@@ -311,7 +321,7 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
       console.error('Add product error:', error);
       showToast('❌ خطأ في الاتصال بالخادم');
     }
-});
+  });
 
   // ===== شراء دورة =====
   async function purchaseCourse(id){ 
@@ -452,7 +462,6 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
       profileBtn.classList.add('hidden'); 
     } 
     lucide.createIcons(); 
-    // تحميل البيانات بعد تحديث واجهة المستخدم
     loadAllData();
   }
   
@@ -462,25 +471,18 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
     showToast('تم تسجيل الخروج'); 
     updateUserUI(); 
     switchTab('courses'); 
-    // تحميل البيانات بعد الخروج (ستظهر المحتويات العامة فقط)
     setTimeout(() => loadAllData(), 100);
   }
   
   function switchTab(tab){ 
-    // إخفاء جميع التبويبات
     ['courses','store','about','profile','admin','purchases'].forEach(t => { 
       document.getElementById(t+'-tab').style.display = (t === tab ? 'block' : 'none'); 
     }); 
     document.getElementById('hero-section').style.display = (tab === 'courses' ? 'block' : 'none'); 
-    
-    // تحديث حالة الأزرار
     document.querySelectorAll('[id^="tab-"]').forEach(btn => btn.classList.remove('active')); 
     const activeBtn = document.getElementById(`tab-${tab}`); 
     if(activeBtn) activeBtn.classList.add('active'); 
-    
-    // إعادة تحميل البيانات عند كل تغيير تبويب
     loadAllData();
-    
     if(tab === 'profile') loadProfileUI(); 
     if(tab === 'purchases') renderPurchasesTab(); 
     if(tab === 'admin'){ updateStats(); renderAdminOrders(); } 
@@ -573,7 +575,6 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
     } lucide.createIcons(); 
   }
   
-  // مراقبة التغييرات في localStorage وإعادة التحميل
   window.addEventListener('storage', function(e) {
     if(e.key === 'academy_user') {
       console.log('تم تغيير حالة المستخدم، إعادة تحميل البيانات');
@@ -581,18 +582,15 @@ document.getElementById('admin-product-form')?.addEventListener('submit', async(
     }
   });
   
-  // تحديث تلقائي كل 30 ثانية لضمان ظهور أحدث البيانات
   setInterval(() => {
     if(document.visibilityState === 'visible') {
       loadAllData();
     }
   }, 30000);
   
-  // تنظيف localStorage القديم (مرة واحدة)
   if(localStorage.getItem('academy_courses')) localStorage.removeItem('academy_courses');
   if(localStorage.getItem('academy_store')) localStorage.removeItem('academy_store');
   
-  // بدء التحميل
   loadAllData();
   lucide.createIcons(); 
   updateUserUI(); 
