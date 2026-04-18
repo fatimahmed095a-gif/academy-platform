@@ -31,7 +31,7 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def safe_uuid(value):
-    """تحويل النص إلى UUID وإرجاعه كنص (لتجنب مشاكل JSON serialization)"""
+    """تحويل النص إلى UUID وإرجاعه كنص"""
     if not value:
         return None
     try:
@@ -42,15 +42,18 @@ def safe_uuid(value):
 def upload_file_to_storage(file_data, file_name, bucket_name, content_type):
     """رفع ملف إلى Supabase Storage وإرجاع الرابط العام"""
     if not supabase:
+        print("❌ Supabase not connected")
         return None
     
     try:
-        # التحقق من وجود bucket
+        # التأكد من وجود المجلد (bucket)
         try:
             supabase.storage.get_bucket(bucket_name)
-        except:
-            # إنشاء bucket إذا لم يكن موجوداً
+            print(f"✅ Bucket '{bucket_name}' exists")
+        except Exception as e:
+            print(f"📁 Creating bucket '{bucket_name}'...")
             supabase.storage.create_bucket(bucket_name, {"public": True})
+            print(f"✅ Bucket '{bucket_name}' created")
         
         # تحويل Base64 إلى bytes
         if ',' in file_data:
@@ -59,6 +62,7 @@ def upload_file_to_storage(file_data, file_name, bucket_name, content_type):
             file_bytes = base64.b64decode(file_data)
         
         # رفع الملف إلى Storage
+        print(f"📤 Uploading {file_name} to {bucket_name}...")
         supabase.storage.from_(bucket_name).upload(
             file_name,
             file_bytes,
@@ -67,6 +71,7 @@ def upload_file_to_storage(file_data, file_name, bucket_name, content_type):
         
         # الحصول على الرابط العام
         public_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
+        print(f"✅ File uploaded successfully: {public_url}")
         return public_url
     except Exception as e:
         print(f"❌ Upload error: {e}")
@@ -166,16 +171,14 @@ def add_course():
     data = request.json
     
     try:
-        # رفع الصورة إلى Storage
         image_url = None
         if data.get('image_data'):
-            file_ext = data.get('image_type', 'jpg')
-            file_name = f"courses/{uuid.uuid4()}.{file_ext}"
+            file_name = f"courses/{uuid.uuid4()}.jpg"
             image_url = upload_file_to_storage(
                 data.get('image_data'), 
                 file_name, 
                 'course-images', 
-                f'image/{file_ext}'
+                'image/jpeg'
             )
         
         new_course = {
@@ -185,7 +188,7 @@ def add_course():
             "lessons_count": int(data.get('lessons', 0)),
             "hours": int(data.get('hours', 0)),
             "rating": float(data.get('rating', 0)),
-            "image_url": image_url or data.get('image_data', ''),
+            "image_url": image_url or '',
             "video_url": data.get('video_data', ''),
             "instructor_name": data.get('instructor_name', 'المدرب'),
             "created_at": datetime.now().isoformat()
@@ -214,7 +217,7 @@ def add_book():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
-    print(f"📚 Received book data: {data}")
+    print(f"📚 Received book data")
     
     try:
         if not data.get('title'):
@@ -223,6 +226,7 @@ def add_book():
         # رفع الصورة إلى Storage
         image_url = None
         if data.get('image_data'):
+            print("📸 Uploading image...")
             file_name = f"books/images/{uuid.uuid4()}.jpg"
             image_url = upload_file_to_storage(
                 data.get('image_data'), 
@@ -234,6 +238,7 @@ def add_book():
         # رفع ملف PDF إلى Storage
         file_url = None
         if data.get('file_data'):
+            print("📄 Uploading PDF...")
             file_name = f"books/pdfs/{uuid.uuid4()}.pdf"
             file_url = upload_file_to_storage(
                 data.get('file_data'), 
@@ -253,7 +258,7 @@ def add_book():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('books').insert(new_book).execute()
-        print(f"✅ Book saved: {response.data}")
+        print(f"✅ Book saved successfully")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
         print(f"❌ Error saving book: {e}")
@@ -277,7 +282,7 @@ def add_product():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
-    print(f"🎁 Received product data: {data}")
+    print(f"🎁 Received product data")
     
     try:
         if not data.get('title'):
@@ -286,6 +291,7 @@ def add_product():
         # رفع الصورة إلى Storage
         image_url = None
         if data.get('image_data'):
+            print("🖼️ Uploading product image...")
             file_name = f"products/{uuid.uuid4()}.jpg"
             image_url = upload_file_to_storage(
                 data.get('image_data'), 
@@ -304,7 +310,7 @@ def add_product():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('products').insert(new_product).execute()
-        print(f"✅ Product saved: {response.data}")
+        print(f"✅ Product saved successfully")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
         print(f"❌ Error saving product: {e}")
@@ -317,7 +323,7 @@ def add_purchase():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
-    print(f"💰 Purchase data received: {data}")
+    print(f"💰 Purchase data received")
     
     try:
         user_id = safe_uuid(data.get('user_id'))
@@ -333,10 +339,9 @@ def add_purchase():
             "total_price": int(data.get('total_price', data.get('item_price', 0))),
             "purchase_date": datetime.now().isoformat()
         }
-        print(f"💰 Formatted purchase: {new_purchase}")
         
         response = supabase.table('purchases').insert(new_purchase).execute()
-        print(f"✅ Purchase saved: {response.data}")
+        print(f"✅ Purchase saved")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
         print(f"❌ Add purchase error: {e}")
