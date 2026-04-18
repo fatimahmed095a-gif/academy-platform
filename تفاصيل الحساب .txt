@@ -15,8 +15,9 @@ python run.py
 
 git add .
 
-# 2. عمل commit للتغييرات
-git commit -m 
+# 2. عمل commit للتغييرات (اكتب رسالة بين علامتي التنصيص)
+git commit -m "تحديث وتحسين المشروع"
+
 # 3. رفع التغييرات إلى GitHub
 git push origin main
 
