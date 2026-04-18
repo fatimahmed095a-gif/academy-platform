@@ -30,11 +30,12 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def safe_uuid(value):
-    """تحويل النص إلى UUID إذا كان ذلك ممكناً، وإلا إرجاع النص الأصلي"""
+    """تحويل النص إلى UUID وإرجاعه كنص (لتجنب مشاكل JSON serialization)"""
     if not value:
         return None
     try:
-        return uuid.UUID(str(value))
+        # تحويل إلى UUID ثم إرجاعه كنص
+        return str(uuid.UUID(str(value)))
     except (ValueError, AttributeError, TypeError):
         return str(value)
 
@@ -230,7 +231,7 @@ def add_product():
         print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API المشتريات (مع تحويل UUID) =====
+# ===== API المشتريات (مع تحويل UUID إلى نص) =====
 @app.route('/api/purchases', methods=['POST'])
 def add_purchase():
     if not supabase:
@@ -240,7 +241,7 @@ def add_purchase():
     print(f"💰 Purchase data received: {data}")
     
     try:
-        # تحويل المعرفات إلى النوع المناسب
+        # تحويل المعرفات إلى نص (لتجنب مشاكل JSON)
         user_id = safe_uuid(data.get('user_id'))
         item_id = safe_uuid(data.get('item_id'))
         
