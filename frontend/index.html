@@ -187,30 +187,39 @@
       </div>
     </nav>
 
-    <!-- Hero Slider -->
+    <!-- Hero Slider - السلايدر الجديد -->
     <section class="relative overflow-hidden bg-gradient-to-bl from-surface via-bg to-surface py-16 md:py-24">
+      <!-- خلفية بنقاط متحركة -->
       <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 50%, #ea580c 1px, transparent 1px), radial-gradient(circle at 80% 20%, #ea580c 1px, transparent 1px); background-size: 60px 60px;"></div>
+      
       <div class="max-w-7xl mx-auto px-4 relative z-10">
+        <!-- النص العلوي -->
         <div class="text-center mb-10 anim-up">
           <h2 id="hero-title" class="text-4xl md:text-6xl font-black mb-4 leading-tight">طوّر مهاراتك مع <span class="text-accent">أفضل المحتوى</span></h2>
           <p id="hero-subtitle" class="text-subtle text-lg md:text-xl max-w-2xl mx-auto">دورات احترافية، كتب مميزة، ومنتجات رقمية بأسعار مناسبة بالدينار العراقي</p>
         </div>
         
+        <!-- السلايدر -->
         <div class="relative max-w-4xl mx-auto anim-up-d1">
           <div class="overflow-hidden rounded-2xl">
             <div id="hero-slider" class="slider-track">
+              <!-- السلايد 1 - الدورات -->
               <div class="min-w-full p-8 md:p-12 rounded-2xl bg-gradient-to-br from-orange-600/20 to-transparent border border-orange-500/20 text-center">
                 <div class="text-6xl mb-4 float-anim">🎓</div>
                 <h3 class="text-2xl font-bold mb-2">دورات تدريبية متقدمة</h3>
                 <p class="text-subtle mb-4">تعلم من أفضل المدربين العرب في البرمجة والتصميم والتسويق</p>
                 <span class="inline-block bg-accent/20 text-accent px-4 py-1 rounded-full text-sm font-bold">ابتداءً من 25,000 د.ع</span>
               </div>
+              
+              <!-- السلايد 2 - الكتب -->
               <div class="min-w-full p-8 md:p-12 rounded-2xl bg-gradient-to-br from-blue-600/20 to-transparent border border-blue-500/20 text-center">
                 <div class="text-6xl mb-4 float-anim-d1">📚</div>
                 <h3 class="text-2xl font-bold mb-2">كتب إلكترونية حصرية</h3>
                 <p class="text-subtle mb-4">مكتبة واسعة من الكتب في التطوير الذاتي والتقنية والأعمال</p>
                 <span class="inline-block bg-blue-500/20 text-blue-400 px-4 py-1 rounded-full text-sm font-bold">ابتداءً من 10,000 د.ع</span>
               </div>
+              
+              <!-- السلايد 3 - المنتجات -->
               <div class="min-w-full p-8 md:p-12 rounded-2xl bg-gradient-to-br from-emerald-600/20 to-transparent border border-emerald-500/20 text-center">
                 <div class="text-6xl mb-4 float-anim-d2">🛍️</div>
                 <h3 class="text-2xl font-bold mb-2">منتجات رقمية مميزة</h3>
@@ -219,10 +228,12 @@
               </div>
             </div>
           </div>
+          
+          <!-- أزرار التنقل أسفل السلايدر -->
           <div class="flex justify-center gap-3 mt-6 flex-wrap">
-            <button onclick="filterSection('courses')" class="px-6 py-2.5 bg-accent hover:bg-orange-700 text-white font-bold rounded-xl transition">الدورات</button>
-            <button onclick="filterSection('books')" class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition">الكتب</button>
-            <button onclick="filterSection('products')" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition">المنتجات</button>
+            <button onclick="goToSlide(0)" class="px-6 py-2.5 bg-accent hover:bg-orange-700 text-white font-bold rounded-xl transition">🎓 الدورات</button>
+            <button onclick="goToSlide(1)" class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl transition">📚 الكتب</button>
+            <button onclick="goToSlide(2)" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition">🛍️ المنتجات</button>
           </div>
         </div>
       </div>
@@ -1373,12 +1384,37 @@
       document.getElementById('mobile-menu').classList.add('hidden');
     }
 
-    // ===== سلايدر =====
-    function goSlide(n) {
+    // ===== سلايدر جديد =====
+    let autoSlideInterval;
+    const sliderTrack = document.getElementById('hero-slider');
+    const totalSlides = 3;
+
+    function goToSlide(n) {
       currentSlide = n;
-      document.getElementById('hero-slider').style.transform = `translateX(-${n * 100}%)`;
+      if (sliderTrack) {
+        sliderTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
+      }
+      resetAutoSlide();
     }
-    setInterval(() => goSlide((currentSlide + 1) % 3), 4500);
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % totalSlides;
+      if (sliderTrack) {
+        sliderTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
+      }
+    }
+
+    function resetAutoSlide() {
+      if (autoSlideInterval) clearInterval(autoSlideInterval);
+      autoSlideInterval = setInterval(() => {
+        nextSlide();
+      }, 4500);
+    }
+
+    // بدء التشغيل التلقائي للسلايدر
+    if (sliderTrack) {
+      resetAutoSlide();
+    }
 
     // ===== ربط الأحداث =====
     document.getElementById('course-form')?.addEventListener('submit', addCourse);
