@@ -1,5 +1,6 @@
 ﻿import os
 import json
+import uuid
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
@@ -28,6 +29,15 @@ def hash_password(password):
     import hashlib
     return hashlib.sha256(password.encode()).hexdigest()
 
+def safe_uuid(value):
+    """تحويل النص إلى UUID إذا كان ذلك ممكناً، وإلا إرجاع النص الأصلي"""
+    if not value:
+        return None
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError):
+        return str(value)
+
 # ===== API المصادقة (باستخدام Supabase Auth) =====
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -39,7 +49,6 @@ def login():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     try:
-        # محاولة تسجيل الدخول عبر Supabase Auth
         response = supabase.auth.sign_in_with_password({
             "email": email,
             "password": password
@@ -70,7 +79,6 @@ def register():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     try:
-        # تسجيل مستخدم جديد عبر Supabase Auth
         response = supabase.auth.sign_up({
             "email": email,
             "password": password,
@@ -81,7 +89,6 @@ def register():
         
         if response.user:
             try:
-                # إضافة الملف الشخصي في جدول profiles (إذا كان موجوداً)
                 supabase.table('profiles').insert({
                     "id": response.user.id,
                     "name": name,
@@ -105,7 +112,7 @@ def register():
     
     return jsonify({'success': False, 'error': 'فشل إنشاء الحساب'}), 400
 
-# ===== API الدورات (لجميع المستخدمين - لا فلتر) =====
+# ===== API الدورات =====
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
     if not supabase:
@@ -142,7 +149,7 @@ def add_course():
         print(f"Add course error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API الكتب (لجميع المستخدمين - لا فلتر) =====
+# ===== API الكتب =====
 @app.route('/api/books', methods=['GET'])
 def get_books():
     if not supabase:
@@ -163,7 +170,6 @@ def add_book():
     print(f"📚 Received book data: {data}")
     
     try:
-        # التحقق من البيانات المطلوبة
         if not data.get('title'):
             return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
         
@@ -184,7 +190,7 @@ def add_book():
         print(f"❌ Error saving book: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API المنتجات (لجميع المستخدمين - لا فلتر) =====
+# ===== API المنتجات =====
 @app.route('/api/products', methods=['GET'])
 def get_products():
     if not supabase:
@@ -224,17 +230,23 @@ def add_product():
         print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API المشتريات (خاصة بكل مستخدم) =====
+# ===== API المشتريات (مع تحويل UUID) =====
 @app.route('/api/purchases', methods=['POST'])
 def add_purchase():
     if not supabase:
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    print(f"💰 Purchase data received: {data}")
+    
     try:
+        # تحويل المعرفات إلى النوع المناسب
+        user_id = safe_uuid(data.get('user_id'))
+        item_id = safe_uuid(data.get('item_id'))
+        
         new_purchase = {
-            "user_id": data.get('user_id'),
-            "item_id": data.get('item_id'),
+            "user_id": user_id,
+            "item_id": item_id,
             "item_type": data.get('item_type'),
             "item_title": data.get('item_title'),
             "item_price": int(data.get('item_price', 0)),
@@ -242,10 +254,13 @@ def add_purchase():
             "total_price": int(data.get('total_price', data.get('item_price', 0))),
             "purchase_date": datetime.now().isoformat()
         }
+        print(f"💰 Formatted purchase: {new_purchase}")
+        
         response = supabase.table('purchases').insert(new_purchase).execute()
+        print(f"✅ Purchase saved: {response.data}")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
-        print(f"Add purchase error: {e}")
+        print(f"❌ Add purchase error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/purchases/<user_id>', methods=['GET'])
@@ -253,7 +268,9 @@ def get_user_purchases(user_id):
     if not supabase:
         return jsonify([])
     try:
-        response = supabase.table('purchases').select('*').eq('user_id', user_id).execute()
+        # تحويل user_id إلى نص للمقارنة
+        user_id_str = str(user_id)
+        response = supabase.table('purchases').select('*').eq('user_id', user_id_str).execute()
         return jsonify(response.data)
     except Exception as e:
         print(f"Get purchases error: {e}")
@@ -326,7 +343,7 @@ def get_stats():
         print(f"Stats error: {e}")
         return jsonify({'courses_count': 0, 'products_count': 0, 'users_count': 0, 'orders_count': 0})
 
-# ===== نقطة النهاية الرئيسية لخدمة الملفات =====
+# ===== نقطة النهاية الرئيسية =====
 @app.route('/', defaults={'path': 'index.html'})
 @app.route('/<path:path>')
 def serve(path):
