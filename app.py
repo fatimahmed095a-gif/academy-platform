@@ -1,6 +1,7 @@
 ﻿import os
 import json
 import uuid
+import base64
 from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
@@ -34,12 +35,44 @@ def safe_uuid(value):
     if not value:
         return None
     try:
-        # تحويل إلى UUID ثم إرجاعه كنص
         return str(uuid.UUID(str(value)))
     except (ValueError, AttributeError, TypeError):
         return str(value)
 
-# ===== API المصادقة (باستخدام Supabase Auth) =====
+def upload_file_to_storage(file_data, file_name, bucket_name, content_type):
+    """رفع ملف إلى Supabase Storage وإرجاع الرابط العام"""
+    if not supabase:
+        return None
+    
+    try:
+        # التحقق من وجود bucket
+        try:
+            supabase.storage.get_bucket(bucket_name)
+        except:
+            # إنشاء bucket إذا لم يكن موجوداً
+            supabase.storage.create_bucket(bucket_name, {"public": True})
+        
+        # تحويل Base64 إلى bytes
+        if ',' in file_data:
+            file_bytes = base64.b64decode(file_data.split(',')[1])
+        else:
+            file_bytes = base64.b64decode(file_data)
+        
+        # رفع الملف إلى Storage
+        supabase.storage.from_(bucket_name).upload(
+            file_name,
+            file_bytes,
+            {"content-type": content_type}
+        )
+        
+        # الحصول على الرابط العام
+        public_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
+        return public_url
+    except Exception as e:
+        print(f"❌ Upload error: {e}")
+        return None
+
+# ===== API المصادقة =====
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -131,7 +164,20 @@ def add_course():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    
     try:
+        # رفع الصورة إلى Storage
+        image_url = None
+        if data.get('image_data'):
+            file_ext = data.get('image_type', 'jpg')
+            file_name = f"courses/{uuid.uuid4()}.{file_ext}"
+            image_url = upload_file_to_storage(
+                data.get('image_data'), 
+                file_name, 
+                'course-images', 
+                f'image/{file_ext}'
+            )
+        
         new_course = {
             "title": data.get('title'),
             "description": data.get('description'),
@@ -139,7 +185,7 @@ def add_course():
             "lessons_count": int(data.get('lessons', 0)),
             "hours": int(data.get('hours', 0)),
             "rating": float(data.get('rating', 0)),
-            "image_url": data.get('image_data', ''),
+            "image_url": image_url or data.get('image_data', ''),
             "video_url": data.get('video_data', ''),
             "instructor_name": data.get('instructor_name', 'المدرب'),
             "created_at": datetime.now().isoformat()
@@ -174,13 +220,35 @@ def add_book():
         if not data.get('title'):
             return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
         
+        # رفع الصورة إلى Storage
+        image_url = None
+        if data.get('image_data'):
+            file_name = f"books/images/{uuid.uuid4()}.jpg"
+            image_url = upload_file_to_storage(
+                data.get('image_data'), 
+                file_name, 
+                'book-covers', 
+                'image/jpeg'
+            )
+        
+        # رفع ملف PDF إلى Storage
+        file_url = None
+        if data.get('file_data'):
+            file_name = f"books/pdfs/{uuid.uuid4()}.pdf"
+            file_url = upload_file_to_storage(
+                data.get('file_data'), 
+                file_name, 
+                'pdf-books', 
+                'application/pdf'
+            )
+        
         new_book = {
             "title": data.get('title'),
             "description": data.get('description', ''),
             "price": int(data.get('price', 0)),
             "quantity": int(data.get('quantity', 1)),
-            "image_url": data.get('image_data', ''),
-            "file_url": data.get('file_data', ''),
+            "image_url": image_url or '',
+            "file_url": file_url or '',
             "author": data.get('author', 'المؤلف'),
             "created_at": datetime.now().isoformat()
         }
@@ -215,12 +283,23 @@ def add_product():
         if not data.get('title'):
             return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
         
+        # رفع الصورة إلى Storage
+        image_url = None
+        if data.get('image_data'):
+            file_name = f"products/{uuid.uuid4()}.jpg"
+            image_url = upload_file_to_storage(
+                data.get('image_data'), 
+                file_name, 
+                'product-images', 
+                'image/jpeg'
+            )
+        
         new_product = {
             "title": data.get('title'),
             "description": data.get('description', ''),
             "price": int(data.get('price', 0)),
             "quantity": int(data.get('quantity', 1)),
-            "image_url": data.get('image_data', ''),
+            "image_url": image_url or '',
             "seller": data.get('seller', 'البائع'),
             "created_at": datetime.now().isoformat()
         }
@@ -231,7 +310,7 @@ def add_product():
         print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API المشتريات (مع تحويل UUID إلى نص) =====
+# ===== API المشتريات =====
 @app.route('/api/purchases', methods=['POST'])
 def add_purchase():
     if not supabase:
@@ -241,7 +320,6 @@ def add_purchase():
     print(f"💰 Purchase data received: {data}")
     
     try:
-        # تحويل المعرفات إلى نص (لتجنب مشاكل JSON)
         user_id = safe_uuid(data.get('user_id'))
         item_id = safe_uuid(data.get('item_id'))
         
@@ -269,7 +347,6 @@ def get_user_purchases(user_id):
     if not supabase:
         return jsonify([])
     try:
-        # تحويل user_id إلى نص للمقارنة
         user_id_str = str(user_id)
         response = supabase.table('purchases').select('*').eq('user_id', user_id_str).execute()
         return jsonify(response.data)
