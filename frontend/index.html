@@ -420,9 +420,17 @@
       profileBtn.classList.add('hidden'); 
     } 
     lucide.createIcons(); 
+    loadAllData(); // ✅ إعادة تحميل البيانات عند تغيير حالة المستخدم
   }
   
-  function logout(){ currentUser = null; localStorage.removeItem('academy_user'); showToast('تم تسجيل الخروج'); updateUserUI(); switchTab('courses'); loadAllData(); }
+  function logout(){ 
+    currentUser = null; 
+    localStorage.removeItem('academy_user'); 
+    showToast('تم تسجيل الخروج'); 
+    updateUserUI(); 
+    switchTab('courses'); 
+    loadAllData(); // ✅ إعادة تحميل البيانات بعد الخروج
+  }
   
   function switchTab(tab){ 
     ['courses','store','about','profile','admin','purchases'].forEach(t => { document.getElementById(t+'-tab').style.display = (t === tab ? 'block' : 'none'); }); 
