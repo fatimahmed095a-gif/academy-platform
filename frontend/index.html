@@ -420,7 +420,8 @@
       profileBtn.classList.add('hidden'); 
     } 
     lucide.createIcons(); 
-    loadAllData(); // ✅ إعادة تحميل البيانات عند تغيير حالة المستخدم
+    // ✅ تحميل البيانات فوراً
+    loadAllData();
   }
   
   function logout(){ 
@@ -429,14 +430,25 @@
     showToast('تم تسجيل الخروج'); 
     updateUserUI(); 
     switchTab('courses'); 
-    loadAllData(); // ✅ إعادة تحميل البيانات بعد الخروج
+    // ✅ تحميل فوري للبيانات
+    setTimeout(() => loadAllData(), 100);
   }
   
   function switchTab(tab){ 
-    ['courses','store','about','profile','admin','purchases'].forEach(t => { document.getElementById(t+'-tab').style.display = (t === tab ? 'block' : 'none'); }); 
+    // إخفاء جميع التبويبات
+    ['courses','store','about','profile','admin','purchases'].forEach(t => { 
+      document.getElementById(t+'-tab').style.display = (t === tab ? 'block' : 'none'); 
+    }); 
     document.getElementById('hero-section').style.display = (tab === 'courses' ? 'block' : 'none'); 
+    
+    // تحديث حالة الأزرار
     document.querySelectorAll('[id^="tab-"]').forEach(btn => btn.classList.remove('active')); 
-    const activeBtn = document.getElementById(`tab-${tab}`); if(activeBtn) activeBtn.classList.add('active'); 
+    const activeBtn = document.getElementById(`tab-${tab}`); 
+    if(activeBtn) activeBtn.classList.add('active'); 
+    
+    // ✅ إعادة تحميل البيانات عند كل تغيير تبويب
+    loadAllData();
+    
     if(tab === 'profile') loadProfileUI(); 
     if(tab === 'purchases') renderPurchasesTab(); 
     if(tab === 'admin'){ updateStats(); renderAdminOrders(); } 
@@ -528,6 +540,21 @@
       grid.appendChild(card); }); 
     } lucide.createIcons(); 
   }
+  
+  // ✅ مراقبة التغييرات في localStorage وإعادة التحميل
+  window.addEventListener('storage', function(e) {
+    if(e.key === 'academy_user') {
+      console.log('تم تغيير حالة المستخدم، إعادة تحميل البيانات');
+      loadAllData();
+    }
+  });
+  
+  // ✅ تحديث تلقائي كل 30 ثانية لضمان ظهور أحدث البيانات
+  setInterval(() => {
+    if(document.visibilityState === 'visible') {
+      loadAllData();
+    }
+  }, 30000);
   
   // تنظيف localStorage القديم (مرة واحدة)
   if(localStorage.getItem('academy_courses')) localStorage.removeItem('academy_courses');
