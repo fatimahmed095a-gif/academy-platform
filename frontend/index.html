@@ -87,7 +87,7 @@
   let tempOrderItem = null;
   const ADMIN_EMAIL = 'admin@academy.com';
 
-  // ===== تحميل البيانات من Supabase عبر API =====
+  // ===== تحميل البيانات العامة من Supabase (لجميع المستخدمين) =====
   async function loadCoursesFromAPI() {
     try {
       const response = await fetch(`${API_URL}/api/courses`);
@@ -127,6 +127,7 @@
     }
   }
 
+  // ===== تحميل مشتريات المستخدم الحالي فقط =====
   async function loadPurchasesFromAPI() {
     if(!currentUser) return;
     try {
@@ -141,11 +142,16 @@
     }
   }
 
+  // ===== تحميل جميع البيانات (العامة + الخاصة) =====
   async function loadAllData() {
+    // تحميل المحتوى العام أولاً (يظهر للجميع)
     await loadCoursesFromAPI();
     await loadBooksFromAPI();
     await loadProductsFromAPI();
-    await loadPurchasesFromAPI();
+    // تحميل مشتريات المستخدم الخاص (إذا كان مسجل دخول)
+    if(currentUser) {
+      await loadPurchasesFromAPI();
+    }
   }
 
   // ===== المصادقة مع Supabase عبر API =====
@@ -281,7 +287,7 @@
     }
   });
 
-  // ===== شراء دورة (مع التحقق من صحة المعرف) =====
+  // ===== شراء دورة =====
   async function purchaseCourse(id){ 
     if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
       showToast('❌ حدث خطأ: معرف الدورة غير صحيح');
@@ -318,7 +324,7 @@
     }
   }
 
-  // ===== شراء كتاب (مع التحقق من صحة المعرف) =====
+  // ===== شراء كتاب =====
   async function buyItem(id, type){ 
     if(!id || id === 'admin' || id === currentUser?.id || id.length < 5){
       showToast('❌ حدث خطأ: معرف العنصر غير صحيح');
@@ -420,7 +426,7 @@
       profileBtn.classList.add('hidden'); 
     } 
     lucide.createIcons(); 
-    // ✅ تحميل البيانات فوراً
+    // تحميل البيانات بعد تحديث واجهة المستخدم
     loadAllData();
   }
   
@@ -430,7 +436,7 @@
     showToast('تم تسجيل الخروج'); 
     updateUserUI(); 
     switchTab('courses'); 
-    // ✅ تحميل فوري للبيانات
+    // تحميل البيانات بعد الخروج (ستظهر المحتويات العامة فقط)
     setTimeout(() => loadAllData(), 100);
   }
   
@@ -446,7 +452,7 @@
     const activeBtn = document.getElementById(`tab-${tab}`); 
     if(activeBtn) activeBtn.classList.add('active'); 
     
-    // ✅ إعادة تحميل البيانات عند كل تغيير تبويب
+    // إعادة تحميل البيانات عند كل تغيير تبويب
     loadAllData();
     
     if(tab === 'profile') loadProfileUI(); 
@@ -541,7 +547,7 @@
     } lucide.createIcons(); 
   }
   
-  // ✅ مراقبة التغييرات في localStorage وإعادة التحميل
+  // مراقبة التغييرات في localStorage وإعادة التحميل
   window.addEventListener('storage', function(e) {
     if(e.key === 'academy_user') {
       console.log('تم تغيير حالة المستخدم، إعادة تحميل البيانات');
@@ -549,7 +555,7 @@
     }
   });
   
-  // ✅ تحديث تلقائي كل 30 ثانية لضمان ظهور أحدث البيانات
+  // تحديث تلقائي كل 30 ثانية لضمان ظهور أحدث البيانات
   setInterval(() => {
     if(document.visibilityState === 'visible') {
       loadAllData();
