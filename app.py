@@ -51,7 +51,19 @@ def upload_to_r2(file_data, file_name, folder):
         
         key = f"{folder}/{uuid.uuid4()}_{file_name}"
         
-        content_type = 'image/jpeg' if file_name.endswith('.jpg') else 'application/pdf'
+        # تحديد نوع المحتوى
+        if file_name.endswith('.jpg') or file_name.endswith('.jpeg'):
+            content_type = 'image/jpeg'
+        elif file_name.endswith('.png'):
+            content_type = 'image/png'
+        elif file_name.endswith('.pdf'):
+            content_type = 'application/pdf'
+        elif file_name.endswith('.mp4'):
+            content_type = 'video/mp4'
+        elif file_name.endswith('.webm'):
+            content_type = 'video/webm'
+        else:
+            content_type = 'application/octet-stream'
         
         s3.put_object(
             Bucket=R2_BUCKET,
@@ -66,6 +78,10 @@ def upload_to_r2(file_data, file_name, folder):
     except Exception as e:
         print(f"❌ R2 Upload error: {e}")
         return None
+
+def upload_video_to_r2(file_data, file_name):
+    """رفع فيديو إلى Cloudflare R2"""
+    return upload_to_r2(file_data, file_name, 'course-videos')
 
 # ===== Helper Functions =====
 def hash_password(password):
@@ -254,7 +270,7 @@ def add_product():
         print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
-# ===== API الدورات =====
+# ===== API الدورات (مع رفع الفيديو إلى R2) =====
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
     if not supabase:
@@ -275,12 +291,22 @@ def add_course():
     print(f"🎓 Received course data")
     
     try:
+        if not data.get('title'):
+            return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
+        
         # رفع الصورة إلى R2
         image_url = None
         if data.get('image_data'):
             print("🖼️ Uploading course image to R2...")
             image_url = upload_to_r2(data.get('image_data'), 'course.jpg', 'course-images')
             print(f"🖼️ Image URL: {image_url}")
+        
+        # رفع الفيديو إلى R2
+        video_url = None
+        if data.get('video_data'):
+            print("🎬 Uploading course video to R2...")
+            video_url = upload_video_to_r2(data.get('video_data'), 'course.mp4')
+            print(f"🎬 Video URL: {video_url}")
         
         new_course = {
             "title": data.get('title'),
@@ -290,7 +316,7 @@ def add_course():
             "hours": int(data.get('hours', 0)),
             "rating": float(data.get('rating', 0)),
             "image_url": image_url or '',
-            "video_url": data.get('video_data', ''),
+            "video_url": video_url or '',
             "instructor_name": data.get('instructor_name', 'المدرب'),
             "created_at": datetime.now().isoformat()
         }
