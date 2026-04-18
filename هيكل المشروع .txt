@@ -18,3 +18,9 @@ C:\Users\324\Desktop\academy_project/
 │
 ├── run.py                             # تشغيل الخادم (اختياري)
 └── README.md                          # شرح المشروع
+
+
+graph TD
+    U[المستخدم] --> R[Render (تشغيل الموقع)]
+    R --> S[Supabase (بيانات + صور + PDF)]
+    R --> C[Cloudflare Worker (فيديوهات)]
