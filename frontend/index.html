@@ -243,7 +243,7 @@
   });
 
   // ===== إضافة كتاب/منتج (للمدير) =====
-  document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
+document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
     e.preventDefault(); 
     if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
     const type = document.getElementById('admin-prod-type').value; 
@@ -253,16 +253,41 @@
     const stock = parseInt(document.getElementById('prod-stock').value); 
     const imageFile = document.getElementById('prod-image').files[0]; 
     const pdfFile = document.getElementById('prod-pdf').files[0]; 
+    
+    if(!title || !desc || !price){
+      showToast('❌ الرجاء ملء جميع الحقول المطلوبة');
+      return;
+    }
     if(!imageFile){ showToast('❌ اختر صورة'); return; } 
+    
     const readFile = (file) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
     const imageData = await readFile(imageFile); 
     let fileData = null; 
     if(type === 'book' && pdfFile){ fileData = await readFile(pdfFile); } 
     
     const endpoint = type === 'book' ? '/api/books' : '/api/products';
+    
+    // تأكد من تطابق أسماء الحقول مع ما يتوقعه الخادم
     const body = type === 'book' 
-      ? { title, description: desc, price, quantity: stock, image_data: imageData, file_data: fileData, author: 'المؤلف' }
-      : { title, description: desc, price, quantity: stock, image_data: imageData, seller: 'البائع' };
+      ? { 
+          title: title, 
+          description: desc, 
+          price: price, 
+          quantity: stock, 
+          image_data: imageData, 
+          file_data: fileData, 
+          author: 'المؤلف' 
+        }
+      : { 
+          title: title, 
+          description: desc, 
+          price: price, 
+          quantity: stock, 
+          image_data: imageData, 
+          seller: 'البائع' 
+        };
+    
+    console.log('Sending data:', body); // للتصحيح
     
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -271,6 +296,7 @@
         body: JSON.stringify(body)
       });
       const data = await response.json();
+      console.log('Response:', data); // للتصحيح
       if(data.success){
         showToast(`✅ تم نشر ${type === 'book' ? 'الكتاب' : 'المنتج'}`);
         e.target.reset();
@@ -285,7 +311,7 @@
       console.error('Add product error:', error);
       showToast('❌ خطأ في الاتصال بالخادم');
     }
-  });
+});
 
   // ===== شراء دورة =====
   async function purchaseCourse(id){ 
