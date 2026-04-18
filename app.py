@@ -14,7 +14,6 @@ CORS(app)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
-# التحقق من وجود المتغيرات
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("⚠️ Warning: Supabase credentials not found!")
     
@@ -31,7 +30,6 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def safe_uuid(value):
-    """تحويل النص إلى UUID وإرجاعه كنص"""
     if not value:
         return None
     try:
@@ -39,42 +37,26 @@ def safe_uuid(value):
     except (ValueError, AttributeError, TypeError):
         return str(value)
 
-def upload_file_to_storage(file_data, file_name, bucket_name, content_type):
-    """رفع ملف إلى Supabase Storage وإرجاع الرابط العام"""
+def upload_to_storage(file_data, file_name, bucket_name):
+    """رفع ملف إلى Supabase Storage"""
     if not supabase:
-        print("❌ Supabase not connected")
         return None
     
     try:
-        # التأكد من وجود المجلد (bucket)
-        try:
-            supabase.storage.get_bucket(bucket_name)
-            print(f"✅ Bucket '{bucket_name}' exists")
-        except Exception as e:
-            print(f"📁 Creating bucket '{bucket_name}'...")
-            supabase.storage.create_bucket(bucket_name, {"public": True})
-            print(f"✅ Bucket '{bucket_name}' created")
-        
         # تحويل Base64 إلى bytes
         if ',' in file_data:
             file_bytes = base64.b64decode(file_data.split(',')[1])
         else:
             file_bytes = base64.b64decode(file_data)
         
-        # رفع الملف إلى Storage
-        print(f"📤 Uploading {file_name} to {bucket_name}...")
-        supabase.storage.from_(bucket_name).upload(
-            file_name,
-            file_bytes,
-            {"content-type": content_type}
-        )
+        # رفع الملف
+        supabase.storage.from_(bucket_name).upload(file_name, file_bytes)
         
         # الحصول على الرابط العام
         public_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
-        print(f"✅ File uploaded successfully: {public_url}")
         return public_url
     except Exception as e:
-        print(f"❌ Upload error: {e}")
+        print(f"Upload error: {e}")
         return None
 
 # ===== API المصادقة =====
@@ -121,9 +103,7 @@ def register():
         response = supabase.auth.sign_up({
             "email": email,
             "password": password,
-            "options": {
-                "data": {"name": name}
-            }
+            "options": {"data": {"name": name}}
         })
         
         if response.user:
@@ -134,8 +114,8 @@ def register():
                     "email": email,
                     "created_at": datetime.now().isoformat()
                 }).execute()
-            except Exception as profile_error:
-                print(f"Profile creation skipped: {profile_error}")
+            except:
+                pass
             
             return jsonify({
                 'success': True, 
@@ -151,6 +131,95 @@ def register():
     
     return jsonify({'success': False, 'error': 'فشل إنشاء الحساب'}), 400
 
+# ===== API الكتب (مع رفع إلى Storage) =====
+@app.route('/api/books', methods=['GET'])
+def get_books():
+    if not supabase:
+        return jsonify([])
+    try:
+        response = supabase.table('books').select('*').execute()
+        return jsonify(response.data)
+    except Exception as e:
+        return jsonify([])
+
+@app.route('/api/books', methods=['POST'])
+def add_book():
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    
+    data = request.json
+    
+    try:
+        if not data.get('title'):
+            return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
+        
+        image_url = None
+        if data.get('image_data'):
+            file_name = f"{uuid.uuid4()}.jpg"
+            image_url = upload_to_storage(data.get('image_data'), file_name, 'book-covers')
+        
+        file_url = None
+        if data.get('file_data'):
+            file_name = f"{uuid.uuid4()}.pdf"
+            file_url = upload_to_storage(data.get('file_data'), file_name, 'pdf-books')
+        
+        new_book = {
+            "title": data.get('title'),
+            "description": data.get('description', ''),
+            "price": int(data.get('price', 0)),
+            "quantity": int(data.get('quantity', 1)),
+            "image_url": image_url or '',
+            "file_url": file_url or '',
+            "author": data.get('author', 'المؤلف'),
+            "created_at": datetime.now().isoformat()
+        }
+        response = supabase.table('books').insert(new_book).execute()
+        return jsonify({'success': True, 'data': response.data})
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 400
+
+# ===== API المنتجات =====
+@app.route('/api/products', methods=['GET'])
+def get_products():
+    if not supabase:
+        return jsonify([])
+    try:
+        response = supabase.table('products').select('*').execute()
+        return jsonify(response.data)
+    except Exception as e:
+        return jsonify([])
+
+@app.route('/api/products', methods=['POST'])
+def add_product():
+    if not supabase:
+        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
+    
+    data = request.json
+    
+    try:
+        if not data.get('title'):
+            return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
+        
+        image_url = None
+        if data.get('image_data'):
+            file_name = f"{uuid.uuid4()}.jpg"
+            image_url = upload_to_storage(data.get('image_data'), file_name, 'product-images')
+        
+        new_product = {
+            "title": data.get('title'),
+            "description": data.get('description', ''),
+            "price": int(data.get('price', 0)),
+            "quantity": int(data.get('quantity', 1)),
+            "image_url": image_url or '',
+            "seller": data.get('seller', 'البائع'),
+            "created_at": datetime.now().isoformat()
+        }
+        response = supabase.table('products').insert(new_product).execute()
+        return jsonify({'success': True, 'data': response.data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 400
+
 # ===== API الدورات =====
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
@@ -160,7 +229,6 @@ def get_courses():
         response = supabase.table('courses').select('*').execute()
         return jsonify(response.data)
     except Exception as e:
-        print(f"Error getting courses: {e}")
         return jsonify([])
 
 @app.route('/api/courses', methods=['POST'])
@@ -173,13 +241,8 @@ def add_course():
     try:
         image_url = None
         if data.get('image_data'):
-            file_name = f"courses/{uuid.uuid4()}.jpg"
-            image_url = upload_file_to_storage(
-                data.get('image_data'), 
-                file_name, 
-                'course-images', 
-                'image/jpeg'
-            )
+            file_name = f"{uuid.uuid4()}.jpg"
+            image_url = upload_to_storage(data.get('image_data'), file_name, 'course-images')
         
         new_course = {
             "title": data.get('title'),
@@ -196,124 +259,6 @@ def add_course():
         response = supabase.table('courses').insert(new_course).execute()
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
-        print(f"Add course error: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 400
-
-# ===== API الكتب =====
-@app.route('/api/books', methods=['GET'])
-def get_books():
-    if not supabase:
-        return jsonify([])
-    try:
-        response = supabase.table('books').select('*').execute()
-        return jsonify(response.data)
-    except Exception as e:
-        print(f"Error getting books: {e}")
-        return jsonify([])
-
-@app.route('/api/books', methods=['POST'])
-def add_book():
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
-    
-    data = request.json
-    print(f"📚 Received book data")
-    
-    try:
-        if not data.get('title'):
-            return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
-        
-        # رفع الصورة إلى Storage
-        image_url = None
-        if data.get('image_data'):
-            print("📸 Uploading image...")
-            file_name = f"books/images/{uuid.uuid4()}.jpg"
-            image_url = upload_file_to_storage(
-                data.get('image_data'), 
-                file_name, 
-                'book-covers', 
-                'image/jpeg'
-            )
-        
-        # رفع ملف PDF إلى Storage
-        file_url = None
-        if data.get('file_data'):
-            print("📄 Uploading PDF...")
-            file_name = f"books/pdfs/{uuid.uuid4()}.pdf"
-            file_url = upload_file_to_storage(
-                data.get('file_data'), 
-                file_name, 
-                'pdf-books', 
-                'application/pdf'
-            )
-        
-        new_book = {
-            "title": data.get('title'),
-            "description": data.get('description', ''),
-            "price": int(data.get('price', 0)),
-            "quantity": int(data.get('quantity', 1)),
-            "image_url": image_url or '',
-            "file_url": file_url or '',
-            "author": data.get('author', 'المؤلف'),
-            "created_at": datetime.now().isoformat()
-        }
-        response = supabase.table('books').insert(new_book).execute()
-        print(f"✅ Book saved successfully")
-        return jsonify({'success': True, 'data': response.data})
-    except Exception as e:
-        print(f"❌ Error saving book: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 400
-
-# ===== API المنتجات =====
-@app.route('/api/products', methods=['GET'])
-def get_products():
-    if not supabase:
-        return jsonify([])
-    try:
-        response = supabase.table('products').select('*').execute()
-        return jsonify(response.data)
-    except Exception as e:
-        print(f"Error getting products: {e}")
-        return jsonify([])
-
-@app.route('/api/products', methods=['POST'])
-def add_product():
-    if not supabase:
-        return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
-    
-    data = request.json
-    print(f"🎁 Received product data")
-    
-    try:
-        if not data.get('title'):
-            return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
-        
-        # رفع الصورة إلى Storage
-        image_url = None
-        if data.get('image_data'):
-            print("🖼️ Uploading product image...")
-            file_name = f"products/{uuid.uuid4()}.jpg"
-            image_url = upload_file_to_storage(
-                data.get('image_data'), 
-                file_name, 
-                'product-images', 
-                'image/jpeg'
-            )
-        
-        new_product = {
-            "title": data.get('title'),
-            "description": data.get('description', ''),
-            "price": int(data.get('price', 0)),
-            "quantity": int(data.get('quantity', 1)),
-            "image_url": image_url or '',
-            "seller": data.get('seller', 'البائع'),
-            "created_at": datetime.now().isoformat()
-        }
-        response = supabase.table('products').insert(new_product).execute()
-        print(f"✅ Product saved successfully")
-        return jsonify({'success': True, 'data': response.data})
-    except Exception as e:
-        print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API المشتريات =====
@@ -323,7 +268,6 @@ def add_purchase():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
-    print(f"💰 Purchase data received")
     
     try:
         user_id = safe_uuid(data.get('user_id'))
@@ -339,12 +283,9 @@ def add_purchase():
             "total_price": int(data.get('total_price', data.get('item_price', 0))),
             "purchase_date": datetime.now().isoformat()
         }
-        
         response = supabase.table('purchases').insert(new_purchase).execute()
-        print(f"✅ Purchase saved")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
-        print(f"❌ Add purchase error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/purchases/<user_id>', methods=['GET'])
@@ -352,11 +293,9 @@ def get_user_purchases(user_id):
     if not supabase:
         return jsonify([])
     try:
-        user_id_str = str(user_id)
-        response = supabase.table('purchases').select('*').eq('user_id', user_id_str).execute()
+        response = supabase.table('purchases').select('*').eq('user_id', str(user_id)).execute()
         return jsonify(response.data)
     except Exception as e:
-        print(f"Get purchases error: {e}")
         return jsonify([])
 
 # ===== API الطلبات =====
@@ -393,7 +332,6 @@ def create_order():
         response = supabase.table('orders').insert(new_order).execute()
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
-        print(f"Create order error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== الإحصائيات =====
@@ -408,22 +346,14 @@ def get_stats():
         books = supabase.table('books').select('*', count='exact').execute()
         orders = supabase.table('orders').select('*', count='exact').execute()
         
-        users_count = 0
-        try:
-            users = supabase.auth.admin.list_users()
-            users_count = len(users.users) if hasattr(users, 'users') else 0
-        except:
-            users_count = 0
-        
         return jsonify({
             'courses_count': courses.count if hasattr(courses, 'count') else len(courses.data),
             'products_count': (products.count if hasattr(products, 'count') else len(products.data)) + 
                              (books.count if hasattr(books, 'count') else len(books.data)),
-            'users_count': users_count,
+            'users_count': 0,
             'orders_count': orders.count if hasattr(orders, 'count') else len(orders.data)
         })
     except Exception as e:
-        print(f"Stats error: {e}")
         return jsonify({'courses_count': 0, 'products_count': 0, 'users_count': 0, 'orders_count': 0})
 
 # ===== نقطة النهاية الرئيسية =====
