@@ -23,6 +23,10 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #f1f1f1; }
     ::-webkit-scrollbar-thumb { background: #a78bfa; }
+    .admin-btn { background: #ef4444; color: white; border-radius: 20px; padding: 4px 8px; font-size: 11px; margin-left: 5px; cursor: pointer; transition: all 0.2s; }
+    .admin-btn:hover { background: #dc2626; transform: scale(1.05); }
+    .edit-btn { background: #3b82f6; color: white; border-radius: 20px; padding: 4px 8px; font-size: 11px; margin-left: 5px; cursor: pointer; transition: all 0.2s; }
+    .edit-btn:hover { background: #2563eb; transform: scale(1.05); }
   </style>
 </head>
 <body class="bg-gradient-to-br from-gray-50 via-white to-indigo-50 text-gray-800">
@@ -65,7 +69,7 @@
 
   <section id="purchases-tab" class="hidden py-12 px-4"><div class="max-w-7xl mx-auto"><h2 class="text-2xl font-bold mb-4">📦 مشترياتي</h2><div class="flex flex-wrap gap-2 mb-6 border-b pb-2"><button onclick="filterPurchases('all')" id="filter-all" class="px-4 py-1 rounded-full text-sm bg-purple-600 text-white">الكل</button><button onclick="filterPurchases('course')" id="filter-course" class="px-4 py-1 rounded-full text-sm bg-gray-200">الدورات</button><button onclick="filterPurchases('book')" id="filter-book" class="px-4 py-1 rounded-full text-sm bg-gray-200">الكتب</button><button onclick="filterPurchases('product')" id="filter-product" class="px-4 py-1 rounded-full text-sm bg-gray-200">المنتجات</button></div><div id="purchases-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div><div id="no-purchases" class="text-center py-12 text-gray-500 hidden">لا توجد مشتريات بعد</div></div></section>
 
-  <section id="admin-tab" class="hidden py-12 px-4"><div class="max-w-6xl mx-auto space-y-8"><div class="bg-white p-6 rounded-2xl shadow"><h3 class="text-2xl font-bold mb-4">📋 طلبات المنتجات</h3><div id="orders-list" class="space-y-3 max-h-96 overflow-y-auto"></div><div id="no-orders" class="text-gray-500">لا توجد طلبات</div></div><div class="grid md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة دورة</h3><form id="course-form"><input id="course-title" placeholder="عنوان الدورة" class="w-full border p-2 rounded mb-2"><textarea id="course-desc" placeholder="الوصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="course-lessons" type="number" placeholder="دروس"><input id="course-hours" type="number" placeholder="ساعات"></div><div class="grid grid-cols-2 gap-2 mt-2"><input id="course-price" type="number" placeholder="السعر"><input id="course-rating" step="0.1" placeholder="تقييم"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="video" class="inline w-4"></i> فيديو الدورة<input type="file" id="course-video" accept="video/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="image"></i> صورة الدورة<input type="file" id="course-image" accept="image/*" class="hidden"></label><button type="submit" class="bg-purple-600 text-white w-full py-2 rounded-xl">رفع دورة</button></form></div><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة كتاب / منتج</h3><form id="admin-product-form"><select id="admin-prod-type" class="w-full border p-2 rounded mb-2"><option value="book">📖 كتاب (PDF)</option><option value="product">🎁 منتج (توصيل)</option></select><input id="prod-title" placeholder="الاسم" class="w-full border p-2 rounded mb-2"><textarea id="prod-desc" placeholder="وصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="prod-price" type="number" placeholder="السعر"><input id="prod-stock" type="number" placeholder="الكمية"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">🖼️ صورة المنتج<input type="file" id="prod-image" accept="image/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">📄 ملف PDF (للكتب فقط)<input type="file" id="prod-pdf" accept="application/pdf" class="hidden"></label><button type="submit" class="bg-green-600 text-white w-full py-2 rounded-xl">نشر</button></form></div></div><div class="grid grid-cols-4 gap-3 text-center"><div class="bg-purple-100 p-3 rounded-xl"><div id="stat-courses" class="text-2xl font-bold">0</div><div>دورات</div></div><div class="bg-green-100 p-3 rounded-xl"><div id="stat-products" class="text-2xl font-bold">0</div><div>منتجات/كتب</div></div><div class="bg-yellow-100 p-3 rounded-xl"><div id="stat-orders" class="text-2xl font-bold">0</div><div>طلبات</div></div><div class="bg-blue-100 p-3 rounded-xl"><div id="stat-users" class="text-2xl font-bold">0</div><div>مستخدمين</div></div></div></div></section>
+  <section id="admin-tab" class="hidden py-12 px-4"><div class="max-w-6xl mx-auto space-y-8"><div class="bg-white p-6 rounded-2xl shadow"><h3 class="text-2xl font-bold mb-4">📋 طلبات المنتجات</h3><div id="orders-list" class="space-y-3 max-h-96 overflow-y-auto"></div><div id="no-orders" class="text-gray-500">لا توجد طلبات</div></div><div class="grid md:grid-cols-2 gap-6"><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة دورة</h3><form id="course-form"><input id="course-title" placeholder="عنوان الدورة" class="w-full border p-2 rounded mb-2"><textarea id="course-desc" placeholder="الوصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="course-lessons" type="number" placeholder="دروس" value="0"><input id="course-hours" type="number" placeholder="ساعات" value="0"></div><div class="grid grid-cols-2 gap-2 mt-2"><input id="course-price" type="number" placeholder="السعر" value="0"><input id="course-rating" step="0.1" placeholder="تقييم" value="0"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="video" class="inline w-4"></i> فيديو الدورة<input type="file" id="course-video" accept="video/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer"><i data-lucide="image"></i> صورة الدورة<input type="file" id="course-image" accept="image/*" class="hidden"></label><button type="submit" class="bg-purple-600 text-white w-full py-2 rounded-xl">رفع دورة</button></form></div><div class="bg-white p-6 rounded-2xl"><h3 class="font-bold text-xl mb-3">➕ إضافة كتاب / منتج</h3><form id="admin-product-form"><select id="admin-prod-type" class="w-full border p-2 rounded mb-2"><option value="book">📖 كتاب (PDF)</option><option value="product">🎁 منتج (توصيل)</option></select><input id="prod-title" placeholder="الاسم" class="w-full border p-2 rounded mb-2"><textarea id="prod-desc" placeholder="وصف" class="w-full border p-2 rounded mb-2"></textarea><div class="grid grid-cols-2 gap-2"><input id="prod-price" type="number" placeholder="السعر" value="0"><input id="prod-stock" type="number" placeholder="الكمية" value="1"></div><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">🖼️ صورة المنتج<input type="file" id="prod-image" accept="image/*" class="hidden"></label><label class="bg-gray-100 block text-center p-2 rounded my-2 cursor-pointer">📄 ملف PDF (للكتب فقط)<input type="file" id="prod-pdf" accept="application/pdf" class="hidden"></label><button type="submit" class="bg-green-600 text-white w-full py-2 rounded-xl">نشر</button></form></div></div><div class="grid grid-cols-4 gap-3 text-center"><div class="bg-purple-100 p-3 rounded-xl"><div id="stat-courses" class="text-2xl font-bold">0</div><div>دورات</div></div><div class="bg-green-100 p-3 rounded-xl"><div id="stat-products" class="text-2xl font-bold">0</div><div>منتجات/كتب</div></div><div class="bg-yellow-100 p-3 rounded-xl"><div id="stat-orders" class="text-2xl font-bold">0</div><div>طلبات</div></div><div class="bg-blue-100 p-3 rounded-xl"><div id="stat-users" class="text-2xl font-bold">0</div><div>مستخدمين</div></div></div></div></section>
 
   <footer class="py-6 text-center text-gray-500 text-sm border-t mt-12"><p>© 2025 أكاديميتي — تعلم بلا حدود</p></footer>
 </div>
@@ -87,7 +91,7 @@
   let tempOrderItem = null;
   const ADMIN_EMAIL = 'admin@academy.com';
 
-  // ===== تحميل البيانات العامة من Supabase (لجميع المستخدمين) =====
+  // ===== تحميل البيانات =====
   async function loadCoursesFromAPI() {
     try {
       const response = await fetch(`${API_URL}/api/courses`);
@@ -127,7 +131,6 @@
     }
   }
 
-  // ===== تحميل مشتريات المستخدم الحالي فقط =====
   async function loadPurchasesFromAPI() {
     if(!currentUser) return;
     try {
@@ -142,7 +145,6 @@
     }
   }
 
-  // ===== تحميل جميع البيانات (العامة + الخاصة) =====
   async function loadAllData() {
     await loadCoursesFromAPI();
     await loadBooksFromAPI();
@@ -152,7 +154,56 @@
     }
   }
 
-  // ===== المصادقة مع Supabase عبر API =====
+  // ===== دوال الحذف =====
+  async function deleteCourse(id, title) {
+    if(!confirm(`هل أنت متأكد من حذف الدورة "${title}"؟`)) return;
+    try {
+      const response = await fetch(`${API_URL}/api/courses/${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if(data.success){
+        showToast(`✅ تم حذف الدورة: ${title}`);
+        loadCoursesFromAPI();
+      } else {
+        showToast('❌ خطأ في حذف الدورة');
+      }
+    } catch(error) {
+      showToast('❌ خطأ في الاتصال بالخادم');
+    }
+  }
+
+  async function deleteBook(id, title) {
+    if(!confirm(`هل أنت متأكد من حذف الكتاب "${title}"؟`)) return;
+    try {
+      const response = await fetch(`${API_URL}/api/books/${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if(data.success){
+        showToast(`✅ تم حذف الكتاب: ${title}`);
+        loadBooksFromAPI();
+      } else {
+        showToast('❌ خطأ في حذف الكتاب');
+      }
+    } catch(error) {
+      showToast('❌ خطأ في الاتصال بالخادم');
+    }
+  }
+
+  async function deleteProduct(id, title) {
+    if(!confirm(`هل أنت متأكد من حذف المنتج "${title}"؟`)) return;
+    try {
+      const response = await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if(data.success){
+        showToast(`✅ تم حذف المنتج: ${title}`);
+        loadProductsFromAPI();
+      } else {
+        showToast('❌ خطأ في حذف المنتج');
+      }
+    } catch(error) {
+      showToast('❌ خطأ في الاتصال بالخادم');
+    }
+  }
+
+  // ===== المصادقة =====
   async function handleAuth() { 
     const email = document.getElementById('auth-email').value.trim(); 
     const pwd = document.getElementById('auth-password').value.trim(); 
@@ -203,19 +254,32 @@
     } 
   }
 
-  // ===== إضافة دورة (للمدير) =====
+  // ===== إضافة دورة (للمدير) - تم إصلاحها =====
   document.getElementById('course-form')?.addEventListener('submit', async(e)=>{ 
     e.preventDefault(); 
     if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
     const title = document.getElementById('course-title').value; 
     const desc = document.getElementById('course-desc').value; 
-    const price = parseInt(document.getElementById('course-price').value); 
-    const lessons = parseInt(document.getElementById('course-lessons').value); 
-    const hours = parseInt(document.getElementById('course-hours').value); 
-    const rating = parseFloat(document.getElementById('course-rating').value); 
+    const price = parseInt(document.getElementById('course-price').value) || 0;
+    const lessons = parseInt(document.getElementById('course-lessons').value) || 0;
+    const hours = parseInt(document.getElementById('course-hours').value) || 0;
+    const rating = parseFloat(document.getElementById('course-rating').value) || 0;
     const videoInput = document.getElementById('course-video'); 
     const imageInput = document.getElementById('course-image'); 
-    if(!videoInput.files[0] || !imageInput.files[0]){ showToast('اختر فيديو وصورة'); return; } 
+    
+    if(!title || !desc){
+      showToast('❌ الرجاء ملء العنوان والوصف');
+      return;
+    }
+    if(price <= 0){
+      showToast('❌ الرجاء إدخال سعر صحيح');
+      return;
+    }
+    if(!videoInput.files[0] || !imageInput.files[0]){ 
+      showToast('❌ اختر فيديو وصورة'); 
+      return; 
+    }
+    
     const readFile = (file) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
     const videoData = await readFile(videoInput.files[0]); 
     const imageData = await readFile(imageInput.files[0]); 
@@ -224,7 +288,17 @@
       const response = await fetch(`${API_URL}/api/courses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description: desc, lessons, hours, price, rating, video_data: videoData, image_data: imageData, instructor_name: 'المدرب' })
+        body: JSON.stringify({ 
+          title, 
+          description: desc, 
+          lessons, 
+          hours, 
+          price, 
+          rating, 
+          video_data: videoData, 
+          image_data: imageData, 
+          instructor_name: 'المدرب' 
+        })
       });
       const data = await response.json();
       if(data.success){
@@ -240,64 +314,42 @@
     }
   });
 
-  // ===== إضافة كتاب/منتج (للمدير) - النسخة المعدلة =====
+  // ===== إضافة كتاب/منتج (للمدير) =====
   document.getElementById('admin-product-form')?.addEventListener('submit', async(e)=>{ 
     e.preventDefault(); 
     if(!isAdmin()){ showToast('صلاحية مدير مطلوبة'); return; }
     const type = document.getElementById('admin-prod-type').value; 
     const title = document.getElementById('prod-title').value; 
     const desc = document.getElementById('prod-desc').value; 
-    const price = parseInt(document.getElementById('prod-price').value); 
-    const stock = parseInt(document.getElementById('prod-stock').value); 
+    const price = parseInt(document.getElementById('prod-price').value) || 0;
+    const stock = parseInt(document.getElementById('prod-stock').value) || 1;
     const imageFile = document.getElementById('prod-image').files[0]; 
     const pdfFile = document.getElementById('prod-pdf').files[0]; 
     
-    if(!title || !desc || !price){
-      showToast('❌ الرجاء ملء جميع الحقول المطلوبة');
+    if(!title || !desc){
+      showToast('❌ الرجاء ملء العنوان والوصف');
       return;
+    }
+    if(price <= 0){
+      showToast('❌ الرجاء إدخال سعر صحيح');
+      return;
+    }
+    if(!imageFile){ 
+      showToast('❌ اختر صورة'); 
+      return; 
     }
     
     const readFile = (file) => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
-    
-    let imageData = null;
+    const imageData = await readFile(imageFile); 
     let fileData = null;
-    
-    if(imageFile){
-      imageData = await readFile(imageFile);
-      console.log('✅ Image loaded, length:', imageData.length);
-    } else {
-      showToast('❌ اختر صورة');
-      return;
-    }
-    
     if(type === 'book' && pdfFile){
       fileData = await readFile(pdfFile);
-      console.log('✅ PDF loaded, length:', fileData.length);
     }
     
     const endpoint = type === 'book' ? '/api/books' : '/api/products';
-    
     const body = type === 'book' 
-      ? { 
-          title: title, 
-          description: desc, 
-          price: price, 
-          quantity: stock, 
-          image_data: imageData, 
-          file_data: fileData || null, 
-          author: 'المؤلف' 
-        }
-      : { 
-          title: title, 
-          description: desc, 
-          price: price, 
-          quantity: stock, 
-          image_data: imageData, 
-          seller: 'البائع' 
-        };
-    
-    console.log('📤 Sending data to:', endpoint);
-    console.log('📤 Image data present:', !!imageData);
+      ? { title, description: desc, price, quantity: stock, image_data: imageData, file_data: fileData, author: 'المؤلف' }
+      : { title, description: desc, price, quantity: stock, image_data: imageData, seller: 'البائع' };
     
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -306,7 +358,6 @@
         body: JSON.stringify(body)
       });
       const data = await response.json();
-      console.log('📥 Response:', data);
       if(data.success){
         showToast(`✅ تم نشر ${type === 'book' ? 'الكتاب' : 'المنتج'}`);
         e.target.reset();
@@ -322,6 +373,68 @@
       showToast('❌ خطأ في الاتصال بالخادم');
     }
   });
+
+  // ===== عرض الدورات مع أزرار حذف وتعديل =====
+  function renderCourses(){ 
+    const grid = document.getElementById('courses-grid'); 
+    if(!grid) return; 
+    grid.innerHTML = ''; 
+    if(coursesData.length === 0){ 
+      document.getElementById('no-courses').classList.remove('hidden'); 
+    } else { 
+      document.getElementById('no-courses').classList.add('hidden'); 
+      coursesData.forEach(c => { 
+        const card = document.createElement('div'); 
+        card.className = 'bg-white rounded-2xl shadow overflow-hidden'; 
+        
+        let adminButtons = '';
+        if(isAdmin()){
+          adminButtons = `
+            <div class="flex gap-1 mt-2">
+              <button onclick="deleteCourse('${c.id}','${c.title}')" class="admin-btn"><i data-lucide="trash-2" class="w-3 h-3 inline ml-1"></i>حذف</button>
+              <button onclick="editCourse('${c.id}')" class="edit-btn"><i data-lucide="edit" class="w-3 h-3 inline ml-1"></i>تعديل</button>
+            </div>
+          `;
+        }
+        
+        card.innerHTML = `<img src="${c.image_url || c.image_data || ''}" class="h-40 w-full object-cover"><div class="p-4"><h3 class="font-bold">${c.title}</h3><p>${(c.description || '').substring(0,70)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold">${c.price} د.ع</span><button onclick="purchaseCourse('${c.id}')" class="bg-purple-100 px-4 py-1 rounded-full text-sm">شراء الدورة</button></div>${adminButtons}</div>`; 
+        grid.appendChild(card); 
+      }); 
+    } 
+    lucide.createIcons(); 
+  }
+
+  // ===== عرض الكتب والمنتجات مع أزرار حذف وتعديل =====
+  function renderStore(){ 
+    const items = storeItems.filter(i => i.category === storeCategory); 
+    const grid = document.getElementById('store-grid'); 
+    const noDiv = document.getElementById('no-store'); 
+    grid.innerHTML = ''; 
+    if(items.length === 0){ 
+      noDiv.classList.remove('hidden'); 
+      noDiv.innerText = 'لا توجد '+ (storeCategory === 'book' ? 'كتب' : 'منتجات'); 
+    } else { 
+      noDiv.classList.add('hidden'); 
+      items.forEach(item => { 
+        const btnText = storeCategory === 'book' ? '📥 شراء و تحميل' : '🛒 شراء (توصيل)'; 
+        const card = document.createElement('div'); 
+        card.className = 'card-scale bg-white rounded-2xl overflow-hidden shadow'; 
+        
+        let adminButtons = '';
+        if(isAdmin()){
+          if(storeCategory === 'book'){
+            adminButtons = `<div class="flex gap-1 mt-2"><button onclick="deleteBook('${item.id}','${item.title}')" class="admin-btn"><i data-lucide="trash-2" class="w-3 h-3 inline ml-1"></i>حذف</button><button onclick="editBook('${item.id}')" class="edit-btn"><i data-lucide="edit" class="w-3 h-3 inline ml-1"></i>تعديل</button></div>`;
+          } else {
+            adminButtons = `<div class="flex gap-1 mt-2"><button onclick="deleteProduct('${item.id}','${item.title}')" class="admin-btn"><i data-lucide="trash-2" class="w-3 h-3 inline ml-1"></i>حذف</button><button onclick="editProduct('${item.id}')" class="edit-btn"><i data-lucide="edit" class="w-3 h-3 inline ml-1"></i>تعديل</button></div>`;
+          }
+        }
+        
+        card.innerHTML = `<img src="${item.image_url || item.image_data || ''}" class="h-44 w-full object-cover"><div class="p-4"><h3 class="font-bold">${item.title}</h3><p class="text-sm text-gray-500">${(item.description || '').substring(0,60)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold text-purple-600">${item.price} د.ع</span><button onclick="buyItem('${item.id}','${storeCategory}')" class="bg-indigo-100 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-sm transition">${btnText}</button></div>${adminButtons}</div>`; 
+        grid.appendChild(card); 
+      }); 
+    } 
+    lucide.createIcons(); 
+  }
 
   // ===== شراء دورة =====
   async function purchaseCourse(id){ 
@@ -440,9 +553,8 @@
     }
   }
 
-  // ===== وظائف مساعدة =====
+  // ===== دوال مساعدة =====
   function saveProfiles(){ localStorage.setItem('academy_profiles', JSON.stringify(userProfiles)); }
-
   function showToast(msg){ let t = document.getElementById('toast') || (()=>{let d=document.createElement('div');d.id='toast';d.className='toast bg-gray-800 hidden';document.body.appendChild(d);return d;})(); t.textContent = msg; t.classList.remove('hidden'); t.classList.add('show'); setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>t.classList.add('hidden'),400); },3000); }
   function isAdmin(){ return currentUser && currentUser.email === ADMIN_EMAIL; }
   
@@ -533,19 +645,6 @@
   
   function setStoreCategory(cat){ storeCategory = cat; document.getElementById('store-book-btn').className = cat === 'book' ? 'px-6 py-2 rounded-full font-bold bg-blue-600 text-white shadow' : 'px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700'; document.getElementById('store-product-btn').className = cat === 'product' ? 'px-6 py-2 rounded-full font-bold bg-green-600 text-white shadow' : 'px-6 py-2 rounded-full font-bold bg-gray-200 text-gray-700'; document.getElementById('store-title').innerHTML = cat === 'book' ? 'الكتب <span class="text-blue-600">الرقمية</span>' : 'المنتجات <span class="text-green-600">الأصلية</span>'; document.getElementById('store-sub').innerText = cat === 'book' ? 'كتب PDF قابلة للتحميل' : 'منتجات تقنية - توصيل سريع'; renderStore(); }
   
-  function renderStore(){ 
-    const items = storeItems.filter(i => i.category === storeCategory); 
-    const grid = document.getElementById('store-grid'); 
-    const noDiv = document.getElementById('no-store'); 
-    grid.innerHTML = ''; 
-    if(items.length === 0){ noDiv.classList.remove('hidden'); noDiv.innerText = 'لا توجد '+ (storeCategory === 'book' ? 'كتب' : 'منتجات'); } 
-    else { noDiv.classList.add('hidden'); 
-      items.forEach(item => { const btnText = storeCategory === 'book' ? '📥 شراء و تحميل' : '🛒 شراء (توصيل)'; const card = document.createElement('div'); card.className = 'card-scale bg-white rounded-2xl overflow-hidden shadow'; 
-      card.innerHTML = `<img src="${item.image_url || item.image_data || ''}" class="h-44 w-full object-cover"><div class="p-4"><h3 class="font-bold">${item.title}</h3><p class="text-sm text-gray-500">${(item.description || '').substring(0,60)}</p><div class="flex justify-between mt-3 items-center"><span class="text-xl font-bold text-purple-600">${item.price} د.ع</span><button onclick="buyItem('${item.id}','${storeCategory}')" class="bg-indigo-100 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-full text-sm transition">${btnText}</button></div></div>`; 
-      grid.appendChild(card); }); 
-    } lucide.createIcons(); 
-  }
-  
   function closeOrderModal(){ tempOrderItem = null; document.getElementById('order-modal').classList.remove('active'); }
   
   function renderAdminOrders(){ 
@@ -562,18 +661,6 @@
   
   function updateAdminBadge(){ const statOrders = document.getElementById('stat-orders'); if(statOrders) statOrders.innerText = productOrders.length; }
   function updateStats(){ document.getElementById('stat-courses').innerText = coursesData.length; document.getElementById('stat-products').innerText = storeItems.length; }
-  
-  function renderCourses(){ 
-    const grid = document.getElementById('courses-grid'); 
-    if(!grid) return; 
-    grid.innerHTML = ''; 
-    if(coursesData.length === 0){ document.getElementById('no-courses').classList.remove('hidden'); } 
-    else { document.getElementById('no-courses').classList.add('hidden'); 
-      coursesData.forEach(c => { const card = document.createElement('div'); card.className = 'bg-white rounded-2xl shadow overflow-hidden'; 
-      card.innerHTML = `<img src="${c.image_url || c.image_data || ''}" class="h-40 w-full object-cover"><div class="p-4"><h3 class="font-bold">${c.title}</h3><p>${(c.description || '').substring(0,70)}</p><div class="flex justify-between mt-3"><span class="text-xl font-bold">${c.price} د.ع</span><button onclick="purchaseCourse('${c.id}')" class="bg-purple-100 px-4 py-1 rounded-full text-sm">شراء الدورة</button></div></div>`; 
-      grid.appendChild(card); }); 
-    } lucide.createIcons(); 
-  }
   
   window.addEventListener('storage', function(e) {
     if(e.key === 'academy_user') {
