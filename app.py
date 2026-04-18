@@ -6,6 +6,8 @@ from datetime import datetime
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from supabase import create_client, Client
+import boto3
+from botocore.client import Config
 
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
@@ -24,6 +26,47 @@ except Exception as e:
     print(f"❌ Supabase connection error: {e}")
     supabase = None
 
+# ===== إعدادات Cloudflare R2 =====
+R2_ACCESS_KEY = os.environ.get("R2_ACCESS_KEY", "c056df2bce9d0974127b6bab5e4bf725")
+R2_SECRET_KEY = os.environ.get("R2_SECRET_KEY", "40d27dd171158496732d980fd06c35f33bdbf0a7f234781ec0ad58f3d5e555c9")
+R2_ENDPOINT = os.environ.get("R2_ENDPOINT", "https://68abc98bcef9ff6c6471cdd592d4094e.r2.cloudflarestorage.com")
+R2_BUCKET = os.environ.get("R2_BUCKET", "academy-storage")
+R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "https://pub-81cde84cb32b4392b5ffe20735d33097.r2.dev")
+
+def upload_to_r2(file_data, file_name, folder):
+    """رفع ملف إلى Cloudflare R2"""
+    try:
+        s3 = boto3.client(
+            's3',
+            endpoint_url=R2_ENDPOINT,
+            aws_access_key_id=R2_ACCESS_KEY,
+            aws_secret_access_key=R2_SECRET_KEY,
+            config=Config(signature_version='s3v4')
+        )
+        
+        if ',' in file_data:
+            file_bytes = base64.b64decode(file_data.split(',')[1])
+        else:
+            file_bytes = base64.b64decode(file_data)
+        
+        key = f"{folder}/{uuid.uuid4()}_{file_name}"
+        
+        content_type = 'image/jpeg' if file_name.endswith('.jpg') else 'application/pdf'
+        
+        s3.put_object(
+            Bucket=R2_BUCKET,
+            Key=key,
+            Body=file_bytes,
+            ContentType=content_type
+        )
+        
+        public_url = f"{R2_PUBLIC_URL}/{key}"
+        print(f"✅ File uploaded to R2: {public_url}")
+        return public_url
+    except Exception as e:
+        print(f"❌ R2 Upload error: {e}")
+        return None
+
 # ===== Helper Functions =====
 def hash_password(password):
     import hashlib
@@ -36,28 +79,6 @@ def safe_uuid(value):
         return str(uuid.UUID(str(value)))
     except (ValueError, AttributeError, TypeError):
         return str(value)
-
-def upload_to_storage(file_data, file_name, bucket_name):
-    """رفع ملف إلى Supabase Storage"""
-    if not supabase:
-        return None
-    
-    try:
-        # تحويل Base64 إلى bytes
-        if ',' in file_data:
-            file_bytes = base64.b64decode(file_data.split(',')[1])
-        else:
-            file_bytes = base64.b64decode(file_data)
-        
-        # رفع الملف
-        supabase.storage.from_(bucket_name).upload(file_name, file_bytes)
-        
-        # الحصول على الرابط العام
-        public_url = supabase.storage.from_(bucket_name).get_public_url(file_name)
-        return public_url
-    except Exception as e:
-        print(f"Upload error: {e}")
-        return None
 
 # ===== API المصادقة =====
 @app.route('/api/login', methods=['POST'])
@@ -131,7 +152,7 @@ def register():
     
     return jsonify({'success': False, 'error': 'فشل إنشاء الحساب'}), 400
 
-# ===== API الكتب (مع رفع إلى Storage) =====
+# ===== API الكتب (مع رفع إلى R2) =====
 @app.route('/api/books', methods=['GET'])
 def get_books():
     if not supabase:
@@ -140,6 +161,7 @@ def get_books():
         response = supabase.table('books').select('*').execute()
         return jsonify(response.data)
     except Exception as e:
+        print(f"Error getting books: {e}")
         return jsonify([])
 
 @app.route('/api/books', methods=['POST'])
@@ -148,20 +170,25 @@ def add_book():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    print(f"📚 Received book data")
     
     try:
         if not data.get('title'):
             return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
         
+        # رفع الصورة إلى R2
         image_url = None
         if data.get('image_data'):
-            file_name = f"{uuid.uuid4()}.jpg"
-            image_url = upload_to_storage(data.get('image_data'), file_name, 'book-covers')
+            print("📸 Uploading image to R2...")
+            image_url = upload_to_r2(data.get('image_data'), 'image.jpg', 'book-covers')
+            print(f"📸 Image URL: {image_url}")
         
+        # رفع ملف PDF إلى R2
         file_url = None
         if data.get('file_data'):
-            file_name = f"{uuid.uuid4()}.pdf"
-            file_url = upload_to_storage(data.get('file_data'), file_name, 'pdf-books')
+            print("📄 Uploading PDF to R2...")
+            file_url = upload_to_r2(data.get('file_data'), 'document.pdf', 'pdf-books')
+            print(f"📄 PDF URL: {file_url}")
         
         new_book = {
             "title": data.get('title'),
@@ -174,9 +201,10 @@ def add_book():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('books').insert(new_book).execute()
+        print(f"✅ Book saved: {response.data}")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error saving book: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API المنتجات =====
@@ -188,6 +216,7 @@ def get_products():
         response = supabase.table('products').select('*').execute()
         return jsonify(response.data)
     except Exception as e:
+        print(f"Error getting products: {e}")
         return jsonify([])
 
 @app.route('/api/products', methods=['POST'])
@@ -196,15 +225,18 @@ def add_product():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    print(f"🎁 Received product data")
     
     try:
         if not data.get('title'):
             return jsonify({'success': False, 'error': 'العنوان مطلوب'}), 400
         
+        # رفع الصورة إلى R2
         image_url = None
         if data.get('image_data'):
-            file_name = f"{uuid.uuid4()}.jpg"
-            image_url = upload_to_storage(data.get('image_data'), file_name, 'product-images')
+            print("🖼️ Uploading product image to R2...")
+            image_url = upload_to_r2(data.get('image_data'), 'product.jpg', 'product-images')
+            print(f"🖼️ Image URL: {image_url}")
         
         new_product = {
             "title": data.get('title'),
@@ -216,8 +248,10 @@ def add_product():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('products').insert(new_product).execute()
+        print(f"✅ Product saved: {response.data}")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
+        print(f"❌ Error saving product: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API الدورات =====
@@ -229,6 +263,7 @@ def get_courses():
         response = supabase.table('courses').select('*').execute()
         return jsonify(response.data)
     except Exception as e:
+        print(f"Error getting courses: {e}")
         return jsonify([])
 
 @app.route('/api/courses', methods=['POST'])
@@ -237,12 +272,15 @@ def add_course():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    print(f"🎓 Received course data")
     
     try:
+        # رفع الصورة إلى R2
         image_url = None
         if data.get('image_data'):
-            file_name = f"{uuid.uuid4()}.jpg"
-            image_url = upload_to_storage(data.get('image_data'), file_name, 'course-images')
+            print("🖼️ Uploading course image to R2...")
+            image_url = upload_to_r2(data.get('image_data'), 'course.jpg', 'course-images')
+            print(f"🖼️ Image URL: {image_url}")
         
         new_course = {
             "title": data.get('title'),
@@ -257,8 +295,10 @@ def add_course():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('courses').insert(new_course).execute()
+        print(f"✅ Course saved: {response.data}")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
+        print(f"❌ Error saving course: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== API المشتريات =====
@@ -268,6 +308,7 @@ def add_purchase():
         return jsonify({'success': False, 'error': 'Supabase not connected'}), 500
     
     data = request.json
+    print(f"💰 Purchase data received")
     
     try:
         user_id = safe_uuid(data.get('user_id'))
@@ -284,8 +325,10 @@ def add_purchase():
             "purchase_date": datetime.now().isoformat()
         }
         response = supabase.table('purchases').insert(new_purchase).execute()
+        print(f"✅ Purchase saved")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
+        print(f"❌ Add purchase error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 @app.route('/api/purchases/<user_id>', methods=['GET'])
@@ -296,6 +339,7 @@ def get_user_purchases(user_id):
         response = supabase.table('purchases').select('*').eq('user_id', str(user_id)).execute()
         return jsonify(response.data)
     except Exception as e:
+        print(f"Get purchases error: {e}")
         return jsonify([])
 
 # ===== API الطلبات =====
@@ -307,6 +351,7 @@ def get_orders():
         response = supabase.table('orders').select('*').execute()
         return jsonify(response.data)
     except Exception as e:
+        print(f"Get orders error: {e}")
         return jsonify([])
 
 @app.route('/api/orders', methods=['POST'])
@@ -330,8 +375,10 @@ def create_order():
             "created_at": datetime.now().isoformat()
         }
         response = supabase.table('orders').insert(new_order).execute()
+        print(f"✅ Order created")
         return jsonify({'success': True, 'data': response.data})
     except Exception as e:
+        print(f"Create order error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 400
 
 # ===== الإحصائيات =====
@@ -354,6 +401,7 @@ def get_stats():
             'orders_count': orders.count if hasattr(orders, 'count') else len(orders.data)
         })
     except Exception as e:
+        print(f"Stats error: {e}")
         return jsonify({'courses_count': 0, 'products_count': 0, 'users_count': 0, 'orders_count': 0})
 
 # ===== نقطة النهاية الرئيسية =====
