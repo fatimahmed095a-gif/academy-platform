@@ -1420,6 +1420,49 @@
         .catch(err => console.error('Service Worker error:', err));
     }
 
+    // ===== إخفاء شريط العنوان على Android نهائياً =====
+    (function() {
+        // التحقق من أن التطبيق يعمل في وضع standalone (كتطبيق وليس متصفح)
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+            
+            // طلب الدخول في وضع ملء الشاشة
+            function requestFullscreen() {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) {
+                    docEl.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+                } else if (docEl.webkitRequestFullscreen) {
+                    docEl.webkitRequestFullscreen();
+                } else if (docEl.msRequestFullscreen) {
+                    docEl.msRequestFullscreen();
+                }
+            }
+            
+            // محاولة الدخول لوضع ملء الشاشة بعد تحميل الصفحة
+            setTimeout(requestFullscreen, 500);
+            
+            // إخفاء شريط التنقل في Chrome على Android
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    window.scrollTo(0, 1);
+                }, 100);
+            });
+            
+            // منع السحب لأسفل لإظهار شريط العنوان
+            let startY = 0;
+            document.addEventListener('touchstart', function(e) {
+                startY = e.touches[0].clientY;
+            }, { passive: false });
+            
+            document.addEventListener('touchmove', function(e) {
+                let currentY = e.touches[0].clientY;
+                if (currentY > startY && window.scrollY === 0) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+        }
+    })();
+
     // ===== بدء التطبيق =====
     loadAllData();
     lucide.createIcons();
