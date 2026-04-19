@@ -3,11 +3,12 @@
   "short_name": "أكاديميتي",
   "description": "منصة تعليمية متكاملة للدورات والكتب والمنتجات الرقمية",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "theme_color": "#ea580c",
   "background_color": "#0f0f23",
   "lang": "ar",
   "dir": "rtl",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icons/icon-192.png",
